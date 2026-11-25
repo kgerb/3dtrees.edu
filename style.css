@@ -224,3 +224,7 @@ figure.concept figcaption{padding:0 8px 6px}
 .post-person{display:flex;gap:14px;align-items:flex-start}
 .post-person h4{margin:0 0 4px;font-size:1rem}
 .avatar.small{width:56px;height:56px;font-size:1.05rem}
+
+/* Intro text spans the full content width, like the figure below it */
+.intro{max-width:none}
+.intro .lead{max-width:none;text-wrap:pretty}
