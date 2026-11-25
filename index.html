@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Weltwälder erfahren</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: one calm column, a wide concept diagram as the centrepiece, three short sections below */
+:root{
+  --bg:#f5f7f2; --surface:#ffffff; --fg:#1d2a22; --muted:#56655b; --line:#cdd8cf;
+  --forest:#2f6b47; --sky:#2c5a8a; --sun:#c98a1c; --leaf-soft:#e2efe5; --sky-soft:#e3ecf6; --sun-soft:#f7ecd6;
+  --display:"Fraunces", Georgia, "Times New Roman", serif;
+  --body:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111813; --surface:#18221b; --fg:#e6eee8; --muted:#a3b3a8; --line:#304036;
+  --forest:#7cc49a; --sky:#86b4e4; --sun:#e5b65a; --leaf-soft:#1d3226; --sky-soft:#1b2a3b; --sun-soft:#352a14; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111813; --surface:#18221b; --fg:#e6eee8; --muted:#a3b3a8; --line:#304036;
+  --forest:#7cc49a; --sky:#86b4e4; --sun:#e5b65a; --leaf-soft:#1d3226; --sky-soft:#1b2a3b; --sun-soft:#352a14; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.6}
+.wrap{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 56px;display:flex;flex-direction:column;gap:40px}
+header{display:flex;flex-direction:column;gap:12px;max-width:44rem}
+.eyebrow{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--forest);font-weight:600}
+h1{font-family:var(--display);font-size:clamp(2rem,5vw,3.1rem);line-height:1.1;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-size:1.45rem;margin:0;text-wrap:balance}
+.lead{font-size:1.15rem;color:var(--muted);margin:0}
+.motto{font-family:var(--display);font-size:1.2rem;color:var(--forest);margin:0}
+figure{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.diagram{overflow-x:auto}
+.diagram svg{display:block;width:100%;min-width:640px;height:auto}
+figcaption{font-size:.88rem;color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:28px}
+.cols section{display:flex;flex-direction:column;gap:8px;min-width:0}
+.cols p{margin:0;color:var(--fg)}
+ol.steps{margin:0;padding-left:1.2rem;display:flex;flex-direction:column;gap:6px}
+ol.steps b{color:var(--forest)}
+.note{font-size:.9rem;color:var(--muted);border-top:1px solid var(--line);padding-top:16px;display:flex;flex-direction:column;gap:6px}
+.note p{margin:0}
+a{color:var(--sky)}
+a:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
+svg text{font-family:var(--body)}
+</style>
+</head>
+<body style="margin:0">
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Hochschulwettbewerb 2027 · Wissenschaftsjahr Raumfahrt · Universität Freiburg</span>
+    <h1>Mit Satelliten in jeden Wald der Erde</h1>
+    <p class="motto">„Man kann nur schützen, was man erfahren kann.“</p>
+    <p class="lead">Satelliten vermessen die Wälder der ganzen Welt. Wir verbinden diese Daten mit über 3.000 echten 3D-Laserscans der offenen Plattform 3Dtrees.earth. Ein Klick auf die Weltkarte, und Jugendliche stehen per Cardboard-Brille mitten im Wald, ohne Flugticket und unabhängig von Einkommen und Herkunft.</p>
+  </header>
+
+  <figure>
+    <div class="diagram">
+      <svg viewBox="0 0 900 400" role="img" aria-labelledby="dgt dgd">
+        <title id="dgt">Konzept: von den Daten zum erfahrbaren Wald</title>
+        <desc id="dgd">Satellitendaten und 3D-Laserscans fließen in ein KI-Modell. Daraus entsteht eine Weltkarte mit begehbaren Wäldern, die Jugendliche per Cardboard-Brille besuchen. Ihre Urteile fließen zurück und prüfen das Modell.</desc>
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/></marker>
+        </defs>
+        <!-- column labels -->
+        <text x="100" y="26" text-anchor="middle" font-size="12" font-weight="600" fill="var(--muted)" letter-spacing="1">DATEN</text>
+        <text x="345" y="26" text-anchor="middle" font-size="12" font-weight="600" fill="var(--muted)" letter-spacing="1">MODELL</text>
+        <text x="560" y="26" text-anchor="middle" font-size="12" font-weight="600" fill="var(--muted)" letter-spacing="1">WELTKARTE</text>
+        <text x="790" y="26" text-anchor="middle" font-size="12" font-weight="600" fill="var(--muted)" letter-spacing="1">KLASSENZIMMER</text>
+
+        <!-- satellite box -->
+        <rect x="10" y="48" width="180" height="120" rx="12" fill="var(--sky-soft)" stroke="var(--sky)"/>
+        <g transform="translate(100,82)" stroke="var(--sky)" stroke-width="2" fill="none">
+          <rect x="-8" y="-8" width="16" height="16" fill="var(--sky)"/>
+          <rect x="-34" y="-5" width="22" height="10"/><rect x="12" y="-5" width="22" height="10"/>
+          <path d="M0 8 L-10 26 M0 8 L10 26" stroke-dasharray="3 3"/>
+        </g>
+        <text x="100" y="128" text-anchor="middle" font-size="15" font-weight="600" fill="var(--fg)">Satelliten</text>
+        <text x="100" y="148" text-anchor="middle" font-size="12" fill="var(--muted)">GEDI-Laser, Sentinel, Landsat</text>
+
+        <!-- laser scan box -->
+        <rect x="10" y="212" width="180" height="120" rx="12" fill="var(--leaf-soft)" stroke="var(--forest)"/>
+        <g transform="translate(100,250)" fill="var(--forest)">
+          <circle cx="0" cy="-12" r="3"/><circle cx="-8" cy="-6" r="3"/><circle cx="8" cy="-6" r="3"/><circle cx="-12" cy="2" r="3"/><circle cx="0" cy="0" r="3"/><circle cx="12" cy="2" r="3"/><circle cx="-6" cy="8" r="3"/><circle cx="6" cy="8" r="3"/>
+          <rect x="-2" y="10" width="4" height="16"/>
+        </g>
+        <text x="100" y="294" text-anchor="middle" font-size="15" font-weight="600" fill="var(--fg)">3D-Laserscans</text>
+        <text x="100" y="314" text-anchor="middle" font-size="12" fill="var(--muted)">3.000+ echte Wälder, 3Dtrees.earth</text>
+
+        <!-- model -->
+        <rect x="260" y="130" width="170" height="120" rx="12" fill="var(--surface)" stroke="var(--fg)" stroke-width="1.5"/>
+        <text x="345" y="176" text-anchor="middle" font-size="15" font-weight="600" fill="var(--fg)">KI-Modell</text>
+        <text x="345" y="198" text-anchor="middle" font-size="12" fill="var(--muted)">AlphaEarth-Embeddings</text>
+        <text x="345" y="216" text-anchor="middle" font-size="12" fill="var(--muted)">+ 3D-Scans</text>
+
+        <path d="M190 108 C230 108 230 165 258 170" fill="none" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#ar)"/>
+        <path d="M190 272 C230 272 230 215 258 210" fill="none" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#ar)"/>
+
+        <!-- world map -->
+        <rect x="480" y="110" width="160" height="160" rx="80" fill="var(--sky-soft)" stroke="var(--sky)"/>
+        <path d="M512 160 q18 -14 34 -4 q10 10 -4 22 q-16 6 -26 -4 z M560 150 q22 -10 40 4 q8 18 -10 30 q-20 4 -26 -12 z M530 210 q16 -6 26 8 q2 18 -14 20 q-14 -4 -12 -28 z M580 210 q16 0 22 14 q-6 14 -20 10 z" fill="var(--forest)" opacity=".75"/>
+        <g transform="translate(588,196)"><path d="M0 0 c-7 -10 -7 -18 0 -22 c7 4 7 12 0 22 z" fill="var(--sun)"/><circle cx="0" cy="-15" r="3" fill="var(--surface)"/></g>
+        <text x="560" y="296" text-anchor="middle" font-size="15" font-weight="600" fill="var(--fg)">Klick auf die Karte</text>
+        <text x="560" y="316" text-anchor="middle" font-size="12" fill="var(--muted)">echt gemessen oder klar als KI gekennzeichnet</text>
+
+        <path d="M430 190 L476 190" fill="none" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#ar)"/>
+
+        <!-- classroom -->
+        <rect x="690" y="48" width="200" height="284" rx="12" fill="var(--sun-soft)" stroke="var(--sun)"/>
+        <g transform="translate(790,84)" fill="none" stroke="var(--fg)" stroke-width="2">
+          <rect x="-26" y="-12" width="52" height="24" rx="6"/><circle cx="-11" cy="0" r="6"/><circle cx="11" cy="0" r="6"/>
+        </g>
+        <text x="790" y="122" text-anchor="middle" font-size="15" font-weight="600" fill="var(--fg)">Cardboard-Brille</text>
+        <text x="712" y="156" font-size="13" fill="var(--fg)"><tspan font-weight="600">1 Vorstellen</tspan></text>
+        <text x="712" y="174" font-size="12" fill="var(--muted)">Wie sieht ein Wald im Kongo aus?</text>
+        <text x="712" y="202" font-size="13" fill="var(--fg)"><tspan font-weight="600">2 Erfahren</tspan></text>
+        <text x="712" y="220" font-size="12" fill="var(--muted)">hineinbeamen und selbst gehen</text>
+        <text x="712" y="248" font-size="13" fill="var(--fg)"><tspan font-weight="600">3 Abgleichen</tspan></text>
+        <text x="712" y="266" font-size="12" fill="var(--muted)">Echt oder generiert?</text>
+        <text x="712" y="294" font-size="13" fill="var(--fg)"><tspan font-weight="600">4 Diskutieren</tspan></text>
+        <text x="712" y="312" font-size="12" fill="var(--muted)">Schützen, was man virtuell erlebt?</text>
+
+        <path d="M640 190 L686 190" fill="none" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#ar)"/>
+
+        <!-- feedback loop -->
+        <path d="M790 334 C790 382 345 382 345 254" fill="none" stroke="var(--forest)" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ar)"/>
+        <text x="560" y="378" text-anchor="middle" font-size="12" fill="var(--forest)" font-weight="600">Urteile der Jugendlichen prüfen das Modell an echten Scans</text>
+      </svg>
+    </div>
+    <figcaption>Vom All ins Klassenzimmer: Satellitendaten und echte 3D-Scans werden zu begehbaren Wäldern. Jede Waldreise endet mit einem echten Stück Wald vor der Tür.</figcaption>
+  </figure>
+
+  <div class="cols">
+    <section>
+      <h2>Für wen</h2>
+      <p>Schulklassen ab Klassenstufe 10, gezielt auch in benachteiligten Lagen, und Seminargruppen im FÖJ und FSJ. Anschlussfähig an den Bildungsplan Baden-Württemberg in Geographie und Biologie: Satellitenbilder kritisch analysieren, Modelle prüfen, Klimawandel, BNE.</p>
+    </section>
+    <section>
+      <h2>Wie es abläuft</h2>
+      <ol class="steps">
+        <li><b>Daten verstehen:</b> vom Laserscan am Boden über die Drohne bis zum Satelliten.</li>
+        <li><b>Waldreise:</b> mehrere kurze Besuche per Smartphone und Cardboard-Brille, auch auf dem iPhone.</li>
+        <li><b>Mitforschen:</b> Was sieht ein Satellit, was nicht? Was hat die KI erfunden?</li>
+      </ol>
+    </section>
+    <section>
+      <h2>Weltwälder-Tag</h2>
+      <p>Wir schicken Cardboard-Brillen an Partnerschulen auf allen Kontinenten und zeigen uns in einer gemeinsamen Videokonferenz die Wälder vor der eigenen Haustür. Ein offenes Unterrichtskit sichert das Format über 2027 hinaus.</p>
+    </section>
+  </div>
+
+  <div class="note">
+    <p>Ein Projektvorschlag aus der Universität Freiburg auf Basis der offenen Plattform <a href="https://3dtrees.earth">3Dtrees.earth</a>.</p>
+    <p>Datengrundlage: AlphaEarth Foundations / Satellite Embedding V1 (Google DeepMind, CC BY 4.0), GEDI (NASA), Copernicus Sentinel, 3Dtrees.earth.</p>
+  </div>
+</div>
+</body>
+</html>
