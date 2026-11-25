@@ -32,6 +32,7 @@
     <nav class="tabs" aria-label="Hauptnavigation">
       <a href="#project" data-tab-link="project"><span lang="de">Projekt</span><span lang="en">Project</span></a>
       <a href="#education" data-tab-link="education"><span lang="de">Bildung</span><span lang="en">Education</span></a>
+      <a href="#dialogue" data-tab-link="dialogue"><span lang="de">Dialog</span><span lang="en">Dialogue</span></a>
       <a href="#about" data-tab-link="about"><span lang="de">Über uns</span><span lang="en">About</span></a>
     </nav>
     <div class="lang-switch" role="group" aria-label="Sprache / Language">
@@ -85,25 +86,27 @@
   <div class="wrap">
 
     <section class="intro reveal" id="project-intro">
-      <p class="lead" lang="de">Die meisten Wälder der Erde wird kaum jemand je betreten. Satelliten vermessen sie trotzdem, jeden Tag und überall. Wir verbinden diese Daten mit der weltweit größten Sammlung von 3D-Laserscans von Wäldern auf <a href="https://3dtrees.earth">3Dtrees.earth</a> und trainieren ein KI-Modell, das die Struktur jedes Waldes der Welt simuliert. Ein Klick auf die Weltkarte, und man steht mitten im Wald, mit nichts als einem Smartphone und einer einfachen Cardboard-VR-Brille.</p>
-      <p class="lead" lang="en">Most of the world’s forests will never be visited by most of us. Satellites measure them anyway, every day and everywhere. We combine these data with the world’s largest collection of 3D laser scans of forests on <a href="https://3dtrees.earth">3Dtrees.earth</a> and train an AI model that simulates the structure of every forest on Earth. One click on the world map, and you are standing in the middle of a forest, with nothing but a smartphone and a simple cardboard VR viewer.</p>
+      <h2><span lang="de">Die Projektidee</span><span lang="en">The idea</span></h2>
+      <p class="lead" lang="de">Viele faszinierende und besonders schützenswerte Wälder der Erde wird kaum jemand je betreten können. Satelliten liefern jedoch Daten, um eine Simulation dieser Wälder zu ermöglichen. Wir verbinden diese Satellitendaten in Form eines Embedding-Modells (z. B. AlphaEarth) mit der weltweit größten Datensammlung an 3D-Laserscans von Wäldern, <a href="https://3dtrees.earth">3Dtrees.earth</a>. Auf diese Weise trainieren wir ein Modell, das die Struktur aller Wälder auf der gesamten Welt simulieren kann.</p>
+      <p class="lead" lang="en">Many fascinating forests on Earth, and many of the most worthy of protection, are places hardly anyone will ever be able to visit. Satellites, however, provide the data to simulate them. We combine these satellite data, in the form of an embedding model (such as AlphaEarth), with the world’s largest collection of 3D laser scans of forests, <a href="https://3dtrees.earth">3Dtrees.earth</a>. This lets us train a model that can simulate the structure of every forest in the world.</p>
+      <p class="lead" lang="de">Und so reicht ein beliebiger Klick auf die Weltkarte, und man erlebt die Einzigartigkeit unserer Wälder hautnah in Virtual Reality, mit nur einem Smartphone und einer einfachen Cardboard-VR-Brille.</p>
+      <p class="lead" lang="en">So a single click anywhere on the world map is enough to experience the uniqueness of our forests up close in virtual reality, with nothing but a smartphone and a simple cardboard VR headset.</p>
     </section>
 
-    <!-- Concept figure slot. Replace the inline SVG with assets/concept-figure.(de|en).svg once the final figure is ready. -->
     <figure class="concept reveal" id="concept-figure">
       <div class="diagram">
         <picture lang="de">
           <source media="(max-width: 700px)" srcset="assets/figure/concept-figure-mobile.de.svg">
-          <img src="assets/figure/concept-figure.de.svg" width="1600" height="1000" loading="lazy" alt="Konzept von ForestVerse in fünf Schritten: 1 Wälder vermessen mit über 3.000 echten 3D-Laserscans auf 3Dtrees.earth, 2 aus dem All sehen mit AlphaEarth-Embeddings, 3 die KI lernt den Zusammenhang zwischen Satellitenmerkmalen und 3D-Waldstruktur, 4 das Modell erzeugt jeden Wald der Welt als Punktwolke, 5 man erlebt den Wald mit Smartphone und Cardboard-Brille.">
+          <img src="assets/figure/concept-figure.de.svg" width="1600" height="1000" loading="lazy" alt="Konzept von ForestVerse: 3D-Laserscans von Wäldern auf 3Dtrees.earth und ein Embedding-Modell aus Satellitendaten trainieren ein Modell, das die Struktur jedes Waldes simuliert. Ein Klick auf die Weltkarte, und man erlebt den Wald mit Smartphone und Cardboard-VR-Brille.">
         </picture>
         <picture lang="en">
           <source media="(max-width: 700px)" srcset="assets/figure/concept-figure-mobile.en.svg">
-          <img src="assets/figure/concept-figure.en.svg" width="1600" height="1000" loading="lazy" alt="The ForestVerse concept in five steps: 1 measure forests with more than 3,000 real 3D laser scans on 3Dtrees.earth, 2 see them from space with AlphaEarth embeddings, 3 AI learns the link between satellite features and 3D forest structure, 4 the model generates any forest on Earth as a point cloud, 5 experience the forest with a smartphone and cardboard headset.">
+          <img src="assets/figure/concept-figure.en.svg" width="1600" height="1000" loading="lazy" alt="The ForestVerse concept: 3D laser scans of forests on 3Dtrees.earth and an embedding model of satellite data train a model that simulates the structure of any forest. One click on the world map, and you experience the forest with a smartphone and a cardboard VR headset.">
         </picture>
       </div>
       <figcaption>
-        <span lang="de">Vom All ins Klassenzimmer: Satellitendaten und echte 3D-Scans werden zu begehbaren Wäldern.</span>
-        <span lang="en">From space to the classroom: satellite data and real 3D scans become forests you can walk through.</span>
+        <span lang="de">Vom Laserscan über Satellitendaten zur simulierten Punktwolke, die man in VR erlebt.</span>
+        <span lang="en">From laser scan to satellite data to a simulated point cloud you experience in VR.</span>
       </figcaption>
     </figure>
 
@@ -112,27 +115,27 @@
       <ol class="journey">
         <li>
           <span class="num">1</span>
-          <h3><span lang="de">Satelliten sehen jeden Wald</span><span lang="en">Satellites see every forest</span></h3>
-          <p lang="de">Sentinel, Landsat und der GEDI-Laser auf der ISS vermessen die ganze Erde. Google DeepMind fasst das in <b>AlphaEarth</b> zusammen: für jedes 10-m-Feld der Erde ein kompakter „Fingerabdruck“ aus 64 Zahlen.</p>
-          <p lang="en">Sentinel, Landsat and the GEDI lidar on the ISS measure the whole planet. Google DeepMind condenses this into <b>AlphaEarth</b>: a compact “fingerprint” of 64 numbers for every 10 m square on Earth.</p>
+          <h3><span lang="de">3D-Laserscans</span><span lang="en">3D laser scans</span></h3>
+          <p lang="de">Laserscans erfassen Wälder in 3D, Stamm für Stamm und Ast für Ast. Auf 3Dtrees.earth liegt die weltweit größte Sammlung solcher Scans, über 3.000 Wälder.</p>
+          <p lang="en">Laser scans capture forests in 3D, stem by stem and branch by branch. 3Dtrees.earth holds the world’s largest collection of these scans, more than 3,000 forests.</p>
         </li>
         <li>
           <span class="num">2</span>
-          <h3><span lang="de">Laserscans zeigen das Innere</span><span lang="en">Laser scans show the inside</span></h3>
-          <p lang="de">Von oben sieht ein Satellit nur das Kronendach. Laserscans vom Boden, von Drohnen und Flugzeugen erfassen jeden Stamm und jeden Ast. Auf 3Dtrees.earth teilen Forschende weltweit über 3.000 solcher Scans offen.</p>
-          <p lang="en">From above, a satellite sees only the canopy. Laser scans from the ground, drones and aircraft capture every stem and branch. On 3Dtrees.earth, researchers worldwide openly share more than 3,000 of these scans.</p>
+          <h3><span lang="de">Satellitendaten</span><span lang="en">Satellite data</span></h3>
+          <p lang="de">Satelliten sehen jeden Wald der Erde. Ein Embedding-Modell wie AlphaEarth fasst ihre Daten für jeden Ort der Welt zusammen.</p>
+          <p lang="en">Satellites see every forest on Earth. An embedding model such as AlphaEarth summarises their data for every place in the world.</p>
         </li>
         <li>
           <span class="num">3</span>
-          <h3><span lang="de">Die KI verbindet beides</span><span lang="en">AI connects the two</span></h3>
-          <p lang="de">Wo es beides gibt, lernt ein Modell, wie Satelliten-Fingerabdruck und Waldstruktur zusammenhängen. Für jeden anderen Ort der Welt schätzt es daraus einen 3D-Wald als Punktwolke.</p>
-          <p lang="en">Where both exist, a model learns how the satellite fingerprint relates to forest structure. For any other place on Earth, it then estimates a 3D forest as a point cloud.</p>
+          <h3><span lang="de">Simulierte Punktwolke</span><span lang="en">Simulated point cloud</span></h3>
+          <p lang="de">Wir trainieren ein Modell, das beides verbindet und so die Struktur jedes Waldes der Welt als 3D-Punktwolke simuliert.</p>
+          <p lang="en">We train a model that connects the two and simulates the structure of any forest in the world as a 3D point cloud.</p>
         </li>
         <li>
           <span class="num">4</span>
-          <h3><span lang="de">Du stehst mittendrin</span><span lang="en">You are standing in it</span></h3>
-          <p lang="de">Die Punktwolke wird aufs Smartphone gestreamt, auch aufs iPhone, und mit einer Cardboard-Brille betrachtet. Kein Flugticket, keine teure Hardware.</p>
-          <p lang="en">The point cloud streams to a smartphone, iPhones included, and is viewed with a cardboard headset. No plane ticket, no expensive hardware.</p>
+          <h3><span lang="de">Virtual Reality</span><span lang="en">Virtual reality</span></h3>
+          <p lang="de">Ein Klick auf die Weltkarte, und man steht mittendrin, mit Smartphone und einfacher Cardboard-VR-Brille.</p>
+          <p lang="en">One click on the world map and you are standing in the forest, with a smartphone and a simple cardboard VR headset.</p>
         </li>
       </ol>
     </section>
@@ -198,11 +201,6 @@
       </div>
     </section>
 
-    <section class="block honest reveal">
-      <h2><span lang="de">Echt oder simuliert?</span><span lang="en">Real or simulated?</span></h2>
-      <p lang="de">Wir sagen offen, was wir wissen und was nicht. Gemessene Wälder sind echt, fehlende erzeugt das Modell und kennzeichnet sie klar als Schätzung. Die Höhe kann dabei einige Meter danebenliegen. Genau diese Grenze ist Teil des Lernens: Was kann ein Satellit sehen, und wann braucht es Messungen am Boden?</p>
-      <p lang="en">We are open about what we know and what we don’t. Measured forests are real; missing ones are generated by the model and clearly marked as estimates. Heights can be off by a few metres. That limit is part of the learning: what can a satellite see, and when do we need measurements on the ground?</p>
-    </section>
 
   </div>
 </section>
@@ -213,80 +211,99 @@
 
     <header class="hero">
       <span class="eyebrow"><span lang="de">Bildung</span><span lang="en">Education</span></span>
-      <h1><span lang="de">Wald erfahren, um ihn zu schützen</span><span lang="en">Experience forests to protect them</span></h1>
-      <p class="lead" lang="de">Wälder speichern Kohlenstoff, kühlen unsere Städte, filtern Wasser und beherbergen den Großteil der Arten an Land. Doch wer einen Regenwald nie erlebt hat, für den bleibt er abstrakt. ForestVerse macht die Wälder der Welt erfahrbar, ohne hinzureisen und unabhängig von Einkommen, Herkunft und sozialem Status.</p>
-      <p class="lead" lang="en">Forests store carbon, cool our cities, filter water and are home to most species on land. Yet a rainforest you have never experienced stays abstract. ForestVerse lets people experience the world’s forests without travelling there, regardless of income, background or social status.</p>
+      <h1><span lang="de">Wälder erfahren, um sie zu schützen</span><span lang="en">Experience forests to protect them</span></h1>
+      <p class="lead" lang="de">Im Fokus steht die Zukunft unserer Gesellschaft: Heranwachsende in Schulen, Universitäten und Freiwilligendiensten, gemeinsam mit Partnern weltweit.</p>
+      <p class="lead" lang="en">Our focus is the future of our society: young people in schools, universities and voluntary services, together with partners around the world.</p>
     </header>
 
-    <div class="cols">
+    <div class="cols reveal">
       <section>
         <h2><span lang="de">Für wen</span><span lang="en">Who it is for</span></h2>
-        <p lang="de">Schulklassen ab Klassenstufe 10, gezielt auch im ländlichen Raum und in benachteiligten Lagen, sowie Seminargruppen im FÖJ und FSJ. Anschlussfähig an den Bildungsplan Baden-Württemberg in Geographie und Biologie: Satellitenbilder kritisch analysieren, Modelle prüfen, Klimawandel, Bildung für nachhaltige Entwicklung.</p>
-        <p lang="en">School classes from year 10, with a deliberate focus on rural and disadvantaged areas, and seminar groups of the German voluntary ecological and social year (FÖJ/FSJ). It links to the Baden-Württemberg curriculum in geography and biology: reading satellite images critically, testing models, climate change and education for sustainable development.</p>
+        <ul class="ticks">
+          <li><span lang="de">Schulen</span><span lang="en">Schools</span></li>
+          <li><span lang="de">Universitäten</span><span lang="en">Universities</span></li>
+          <li><span lang="de">Freiwilligendienste</span><span lang="en">Voluntary services</span></li>
+          <li><span lang="de">Partner weltweit</span><span lang="en">Partners worldwide</span></li>
+        </ul>
       </section>
       <section>
         <h2><span lang="de">Was man lernt</span><span lang="en">What you learn</span></h2>
         <ul class="ticks">
-          <li><span lang="de">Warum Wälder für Klima und Artenvielfalt zählen</span><span lang="en">Why forests matter for climate and biodiversity</span></li>
-          <li><span lang="de">Wie Raumfahrt und Laserscans Wälder vermessen</span><span lang="en">How space missions and laser scans measure forests</span></li>
-          <li><span lang="de">Was KI kann, und wo sie erfindet</span><span lang="en">What AI can do, and where it makes things up</span></li>
-          <li><span lang="de">Wie unterschiedlich Wälder weltweit sind</span><span lang="en">How different forests are around the world</span></li>
+          <li><span lang="de">Welche Rolle Wälder in unseren Ökosystemen spielen</span><span lang="en">The role forests play in our ecosystems</span></li>
+          <li><span lang="de">Wie vielfältig die Wälder der Welt sind</span><span lang="en">How diverse the world’s forests are</span></li>
+          <li><span lang="de">Wie Fernerkundung Wälder heute erfasst</span><span lang="en">How remote sensing captures forests today</span></li>
+          <li><span lang="de">Den Weg der Daten vom Laserscan zur simulierten Punktwolke</span><span lang="en">How data travels from laser scan to simulated point cloud</span></li>
         </ul>
       </section>
     </div>
 
     <section class="block reveal">
-      <h2><span lang="de">Eine Waldreise in vier Schritten</span><span lang="en">A forest journey in four steps</span></h2>
+      <h2><span lang="de">So läuft ein Workshop ab</span><span lang="en">How a workshop works</span></h2>
       <ol class="journey">
         <li>
           <span class="num">1</span>
-          <h3><span lang="de">Vorstellen</span><span lang="en">Imagine</span></h3>
-          <p lang="de">Wie sieht ein Wald in Finnland, im Kongobecken oder auf Borneo aus? Die Jugendlichen skizzieren und beschreiben ihr Bild.</p>
-          <p lang="en">What does a forest in Finland, the Congo Basin or Borneo look like? Students sketch and describe their picture.</p>
+          <h3><span lang="de">Kennenlernen</span><span lang="en">Get to know</span></h3>
+          <p lang="de">Die Teilnehmenden lernen die Rolle der Wälder in unseren Ökosystemen kennen, ihre Vielfalt und die heutigen Möglichkeiten der Fernerkundung.</p>
+          <p lang="en">Participants learn about the role of forests in our ecosystems, their diversity and what remote sensing can capture today.</p>
         </li>
         <li>
           <span class="num">2</span>
-          <h3><span lang="de">Erfahren</span><span lang="en">Experience</span></h3>
-          <p lang="de">Per Cardboard-Brille beamen sie sich hinein und bewegen sich frei durch den Wald.</p>
-          <p lang="en">With a cardboard viewer they beam themselves in and move freely through the forest.</p>
+          <h3><span lang="de">Nachvollziehen</span><span lang="en">Follow the data</span></h3>
+          <p lang="de">Neben der ökologischen Bedeutung verfolgen sie den Weg der Daten: vom Laserscan über Satellitendaten bis zur simulierten Punktwolke.</p>
+          <p lang="en">Alongside the ecological importance, they follow the path of the data: from laser scan to satellite data to the simulated point cloud.</p>
         </li>
         <li>
           <span class="num">3</span>
-          <h3><span lang="de">Abgleichen</span><span lang="en">Compare</span></h3>
-          <p lang="de">Was stimmt, was überrascht? Echt oder von der KI erzeugt? Was sieht ein Satellit, was nicht?</p>
-          <p lang="en">What matched, what was surprising? Real or AI-generated? What can a satellite see, and what not?</p>
+          <h3><span lang="de">Eintauchen</span><span lang="en">Dive in</span></h3>
+          <p lang="de">Mit bereitgestellten VR-Brillen tauchen sie selbst in die Wälder unserer Welt ein, bewegen sich frei und erfahren sie auf ihre eigene Art.</p>
+          <p lang="en">With VR headsets we provide, they dive into the forests of our world themselves, move freely and experience them in their own way.</p>
         </li>
         <li>
           <span class="num">4</span>
-          <h3><span lang="de">Mitforschen</span><span lang="en">Do research</span></h3>
-          <p lang="de">Bilder, Fragen und Urteile der Jugendlichen fließen in die Materialien und als Rückmeldung ins Modell.</p>
-          <p lang="en">Students’ pictures, questions and judgements flow into the materials and back into the model as feedback.</p>
+          <h3><span lang="de">Austauschen</span><span lang="en">Share</span></h3>
+          <p lang="de">Im Nachgang tauschen sie ihre Eindrücke aus und diskutieren gemeinsam.</p>
+          <p lang="en">Afterwards they share their impressions and discuss them together.</p>
         </li>
       </ol>
     </section>
 
-    <section class="block reveal">
-      <h2><span lang="de">Fragen für die Diskussion</span><span lang="en">Questions for discussion</span></h2>
-      <ul class="questions">
-        <li><span lang="de">Wie sieht „Wald“ in meinem Kopf aus, und woher kommt dieses Bild?</span><span lang="en">What does “forest” look like in my head, and where does that picture come from?</span></li>
-        <li><span lang="de">Was sieht ein Satellit von einem Wald, und was bleibt ihm verborgen?</span><span lang="en">What does a satellite see of a forest, and what stays hidden?</span></li>
-        <li><span lang="de">Darf eine KI Wälder erfinden, und wie müsste sie das kennzeichnen?</span><span lang="en">May an AI invent forests, and how should it label them?</span></li>
-        <li><span lang="de">Kann ich schützen, was ich nur virtuell erlebt habe?</span><span lang="en">Can I protect what I have only experienced virtually?</span></li>
-        <li><span lang="de">Wer kann Wälder bereisen, wer nicht? Was ändert ein virtueller Zugang?</span><span lang="en">Who can travel to forests, and who cannot? What does virtual access change?</span></li>
-        <li><span lang="de">Wem glaube ich: dem Satelliten, der KI oder meinen eigenen Augen?</span><span lang="en">Whom do I trust: the satellite, the AI or my own eyes?</span></li>
-      </ul>
-    </section>
+  </div>
+</section>
+
+<!-- ============================== DIALOGUE ============================== -->
+<section class="tab-panel" id="dialogue" data-tab="dialogue" hidden>
+  <div class="wrap">
+
+    <header class="hero">
+      <span class="eyebrow"><span lang="de">Dialog</span><span lang="en">Dialogue</span></span>
+      <h1><span lang="de">Offen für alle</span><span lang="en">Open to everyone</span></h1>
+      <p class="lead" lang="de">Auf dieser Website stellen wir ForestVerse verständlich vor und begleiten das Projekt von Anfang bis Ende.</p>
+      <p class="lead" lang="en">On this website we explain ForestVerse in plain words and follow the project from start to finish.</p>
+    </header>
+
+    <div class="dialogue-grid reveal">
+      <section class="card">
+        <h2><span lang="de">Videos zum Fortschritt</span><span lang="en">Progress videos</span></h2>
+        <p lang="de">Kurze Videobeiträge dokumentieren, wie das Projekt vorankommt. Die ersten Videos folgen hier.</p>
+        <p lang="en">Short videos document how the project is progressing. The first ones will appear here.</p>
+      </section>
+      <section class="card">
+        <h2><span lang="de">Eindrücke aus den Seminaren</span><span lang="en">Impressions from the seminars</span></h2>
+        <p lang="de">Mit dem Einverständnis unserer Projektpartner teilen wir Eindrücke aus den Seminaren.</p>
+        <p lang="en">With our project partners’ consent, we share impressions from the seminars.</p>
+      </section>
+    </div>
 
     <section class="block feature reveal">
-      <h2><span lang="de">Weltwälder-Tag</span><span lang="en">World Forest Day</span></h2>
-      <p lang="de">Wir schicken Cardboard-Brillen an Partnerschulen auf allen Kontinenten. In einer gemeinsamen Videokonferenz zeigen sich die Klassen gegenseitig die Wälder vor ihrer Haustür. Ein offener Abend in Freiburg präsentiert die Ergebnisse.</p>
-      <p lang="en">We send cardboard viewers to partner schools on every continent. In a shared video call, classes show each other the forests on their doorsteps. An open evening in Freiburg presents the results.</p>
+      <h2><span lang="de">Höhepunkt: das digitale ForestVerse-Abschlussevent</span><span lang="en">Highlight: the digital ForestVerse closing event</span></h2>
+      <p lang="de">Zum Abschluss stellen wir das Projekt mit allen Erfahrungen und Ergebnissen der breiten Öffentlichkeit vor und machen die technischen Mittel und Ressourcen zugänglich.</p>
+      <p lang="en">At the end, we present the project with everything we have learned and achieved to the wider public, and make the technical tools and resources available.</p>
     </section>
 
     <section class="block reveal">
-      <h2><span lang="de">Offen über 2027 hinaus</span><span lang="en">Open beyond 2027</span></h2>
-      <p lang="de">Ein offenes Unterrichtskit und ein FÖJ-Seminarmodul sichern die Waldreisen nach Projektende. Daten, Code und Materialien bleiben frei zugänglich: Jeder Mensch mit Smartphone kann die Karte nutzen.</p>
-      <p lang="en">An open teaching kit and a seminar module for voluntary-year groups keep the forest journeys going after the project ends. Data, code and materials stay openly available: anyone with a smartphone can use the map.</p>
+      <h2><span lang="de">Auch nach dem Projekt verfügbar</span><span lang="en">Available after the project</span></h2>
+      <p lang="de">So bleibt ForestVerse auch nach Projektende für Interessierte und Bildungsträger nachhaltig verfügbar.</p>
+      <p lang="en">This way ForestVerse stays available to anyone interested and to education providers after the project ends.</p>
     </section>
 
   </div>
@@ -299,46 +316,69 @@
     <header class="hero">
       <span class="eyebrow"><span lang="de">Über uns</span><span lang="en">About</span></span>
       <h1><span lang="de">Das Team</span><span lang="en">The team</span></h1>
-      <p class="lead" lang="de">ForestVerse entsteht an der Professur für Sensorgestützte Geoinformatik der Universität Freiburg und baut auf der offenen Plattform 3Dtrees.earth auf.</p>
-      <p class="lead" lang="en">ForestVerse is developed at the Chair of Sensor-based Geoinformatics at the University of Freiburg and builds on the open platform 3Dtrees.earth.</p>
+      <p class="lead" lang="de">ForestVerse entsteht an der Professur für Sensorgestützte Geoinformatik (geosense) der Universität Freiburg und baut auf der offenen Plattform 3Dtrees.earth auf.</p>
+      <p class="lead" lang="en">ForestVerse is developed at the Chair of Sensor-based Geoinformatics (geosense) at the University of Freiburg and builds on the open platform 3Dtrees.earth.</p>
     </header>
 
     <div class="people">
       <article class="person">
-        <div class="avatar" aria-hidden="true">KG</div>
+        <div class="avatar"><img src="https://uni-freiburg.de/enr-geosense/wp-content/uploads/sites/96/Killian.jpg" alt="Kilian Gerberding" loading="lazy" referrerpolicy="no-referrer"><span aria-hidden="true">KG</span></div>
         <div>
           <h2>Kilian Gerberding</h2>
-          <p class="role"><span lang="de">Projektleitung · Daten und KI</span><span lang="en">Project lead · Data and AI</span></p>
-          <p lang="de">Kilian forscht als Doktorand an der Universität Freiburg zu 3D-Laserscans von Wäldern und baut die offene Plattform 3Dtrees.earth auf, auf der Forschende weltweit ihre Waldscans teilen. In ForestVerse verantwortet er Daten, KI-Modell und den VR-Viewer.</p>
-          <p lang="en">Kilian is a doctoral researcher at the University of Freiburg working on 3D laser scanning of forests. He builds the open platform 3Dtrees.earth, where researchers worldwide share their forest scans. In ForestVerse he is responsible for the data, the AI model and the VR viewer.</p>
+          <p class="role"><span lang="de">Projektleitung · Doktorand</span><span lang="en">Project lead · Doctoral researcher</span></p>
+          <p lang="de">Kilian promoviert an der Universität Freiburg in den Umweltwissenschaften (Data Science &amp; Environmental Modelling) an der Professur für Sensorgestützte Geoinformatik. Er baut die offene Plattform 3Dtrees.earth mit auf, auf der Forschende weltweit 3D-Laserscans von Wäldern teilen.</p>
+          <p lang="en">Kilian is a doctoral researcher in environmental sciences (Data Science &amp; Environmental Modelling) at the Chair of Sensor-based Geoinformatics, University of Freiburg. He helps build the open platform 3Dtrees.earth, where researchers worldwide share 3D laser scans of forests.</p>
+          <h3 class="pubs-title"><span lang="de">Ausgewählte Beiträge</span><span lang="en">Selected work</span></h3>
+          <ul class="pubs">
+            <li>Gerberding, K., Vajna-Jehle, J., Kattenborn, T., Scharinger, C., Lusk, D., Brede, B., Sperlich, M., Seifert, T., Grüning, B., Puliti, S., Frey, J. (2026). <a href="https://doi.org/10.5194/egusphere-egu26-20434">3Dtrees.earth – A platform for accessing, analyzing, and visualizing LiDAR data in forest environments</a>. EGU General Assembly 2026.</li>
+          </ul>
+          <p class="links">
+            <a href="https://uni-freiburg.de/enr-geosense/team/kilian_gerberding/">geosense</a>
+            <a href="https://scholar.google.de/citations?hl=de&amp;user=zy6J3RoAAAAJ">Google Scholar</a>
+            <a href="https://www.researchgate.net/profile/Kilian-Gerberding/research">ResearchGate</a>
+            <a href="https://github.com/kgerb/">GitHub</a>
+            <a href="https://de.linkedin.com/in/kilian-gerberding-314721282">LinkedIn</a>
+          </p>
         </div>
       </article>
       <article class="person">
-        <div class="avatar" aria-hidden="true">MM</div>
+        <div class="avatar"><span aria-hidden="true">MM</span></div>
         <div>
           <h2>Marina Meyer</h2>
           <p class="role"><span lang="de">Bildung und Vermittlung</span><span lang="en">Education and outreach</span></p>
-          <p lang="de">Marina bringt die Bildungsperspektive ins Projekt. Sie entwickelt das Workshop-Konzept für Schulklassen und FÖJ-Gruppen, die Unterrichtsmaterialien und die Zusammenarbeit mit Partnerschulen weltweit.</p>
-          <p lang="en">Marina brings the education perspective to the project. She develops the workshop concept for school classes and voluntary-year groups, the teaching materials and the collaboration with partner schools worldwide.</p>
+          <p lang="de">Marina bringt die Bildungsperspektive ins Projekt und gestaltet die Workshops mit Schulen, Universitäten und Freiwilligendiensten.</p>
+          <p lang="en">Marina brings the education perspective to the project and shapes the workshops with schools, universities and voluntary services.</p>
           <p class="links"><a href="https://www.researchgate.net/profile/Marina-Meyer-5">ResearchGate</a></p>
         </div>
       </article>
       <article class="person">
-        <div class="avatar" aria-hidden="true">TK</div>
+        <div class="avatar"><img src="https://uni-freiburg.de/enr-geosense/wp-content/uploads/sites/96/Universitaet-Freiburg-Kattenborn.28-1-scaled.jpg" alt="Teja Kattenborn" loading="lazy" referrerpolicy="no-referrer"><span aria-hidden="true">TK</span></div>
         <div>
           <h2>Prof. Dr. Teja Kattenborn</h2>
           <p class="role"><span lang="de">Betreuung</span><span lang="en">Supervisor</span></p>
-          <p lang="de">Teja leitet die Professur für Sensorgestützte Geoinformatik an der Universität Freiburg. Er forscht dazu, wie Fernerkundung und maschinelles Lernen Vegetation und Wälder aus der Luft und dem All erfassen.</p>
-          <p lang="en">Teja heads the Chair of Sensor-based Geoinformatics at the University of Freiburg. His research looks at how remote sensing and machine learning capture vegetation and forests from the air and from space.</p>
-          <p class="links"><a href="https://uni-freiburg.de/enr-geosense/team/kattenborn/">geosense</a></p>
+          <p lang="de">Teja ist seit 2023 Professor für Sensorgestützte Geoinformatik an der Universität Freiburg und wissenschaftlicher Leiter von 3Dtrees.earth und deadtrees.earth. Er forscht zu Fernerkundung über Skalen hinweg, Biodiversität und Ökosystemprozessen sowie zu maschinellem Lernen und Deep Learning.</p>
+          <p lang="en">Teja has been Professor of Sensor-based Geoinformatics at the University of Freiburg since 2023 and is scientific lead of 3Dtrees.earth and deadtrees.earth. His research covers remote sensing across scales, biodiversity and ecosystem processes, and machine and deep learning.</p>
+          <h3 class="pubs-title"><span lang="de">Ausgewählte Publikationen</span><span lang="en">Selected publications</span></h3>
+          <ul class="pubs">
+            <li>Kattenborn, T., Leitloff, J., Schiefer, F., Hinz, S. (2021). <a href="https://doi.org/10.1016/j.isprsjprs.2020.12.010">Review on Convolutional Neural Networks (CNN) in vegetation remote sensing</a>. ISPRS Journal of Photogrammetry and Remote Sensing, 173, 24–49.</li>
+            <li>Schiefer, F., Kattenborn, T., Frick, A., Frey, J., Schall, P., Koch, B., Schmidtlein, S. (2020). <a href="https://doi.org/10.1016/j.isprsjprs.2020.10.015">Mapping forest tree species in high resolution UAV-based RGB-imagery by means of convolutional neural networks</a>. ISPRS Journal of Photogrammetry and Remote Sensing, 170, 205–215.</li>
+            <li>Kattenborn, T., Eichel, J., Fassnacht, F. E. (2019). <a href="https://doi.org/10.1038/s41598-019-53797-9">Convolutional Neural Networks enable efficient, accurate and fine-grained segmentation of plant species and communities from high-resolution UAV imagery</a>. Scientific Reports, 9, 17656.</li>
+          </ul>
+          <p class="links">
+            <a href="https://uni-freiburg.de/enr-geosense/team/kattenborn/">geosense</a>
+            <a href="https://scholar.google.de/citations?user=pgzIvAcAAAAJ&amp;hl=en">Google Scholar</a>
+            <a href="https://orcid.org/0000-0001-7381-3828">ORCID</a>
+            <a href="https://www.researchgate.net/profile/Teja-Kattenborn">ResearchGate</a>
+            <a href="https://www.linkedin.com/in/teja-kattenborn-40898090/">LinkedIn</a>
+          </p>
         </div>
       </article>
     </div>
 
     <section class="block reveal">
-      <h2><span lang="de">Mitmachen</span><span lang="en">Get involved</span></h2>
-      <p lang="de">Sie unterrichten an einer Schule, leiten eine Seminargruppe oder möchten Partnerschule werden? Wir freuen uns über Kontakt über <a href="https://3dtrees.earth">3Dtrees.earth</a>.</p>
-      <p lang="en">Do you teach at a school, run a seminar group or want to become a partner school? Get in touch via <a href="https://3dtrees.earth">3Dtrees.earth</a>.</p>
+      <h2><span lang="de">Partner werden</span><span lang="en">Become a partner</span></h2>
+      <p lang="de">Sie arbeiten an einer Schule, Universität oder in einem Freiwilligendienst und möchten mitmachen? Melden Sie sich über <a href="https://3dtrees.earth">3Dtrees.earth</a>.</p>
+      <p lang="en">Do you work at a school, a university or in a voluntary service and want to take part? Get in touch via <a href="https://3dtrees.earth">3Dtrees.earth</a>.</p>
     </section>
 
   </div>

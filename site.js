@@ -1,6 +1,6 @@
 // ForestVerse: tabs via URL hash, DE/EN switch. No build step, no dependencies.
 (function () {
-  var TABS = ['project', 'education', 'about'];
+  var TABS = ['project', 'education', 'dialogue', 'about'];
   var root = document.documentElement;
 
   // ---- Language ----
@@ -24,8 +24,8 @@
 
   // ---- Tabs ----
   var TITLES = {
-    de: { project: 'ForestVerse – Jeder Wald, nur ein Klick entfernt', education: 'Bildung · ForestVerse', about: 'Über uns · ForestVerse' },
-    en: { project: 'ForestVerse – Every forest, just one click away', education: 'Education · ForestVerse', about: 'About · ForestVerse' }
+    de: { project: 'ForestVerse – Jeder Wald, nur ein Klick entfernt', education: 'Bildung · ForestVerse', dialogue: 'Dialog · ForestVerse', about: 'Über uns · ForestVerse' },
+    en: { project: 'ForestVerse – Every forest, just one click away', education: 'Education · ForestVerse', dialogue: 'Dialogue · ForestVerse', about: 'About · ForestVerse' }
   };
   var current = 'project';
   function setTitle() { document.title = TITLES[root.lang === 'en' ? 'en' : 'de'][current]; }
