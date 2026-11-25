@@ -185,6 +185,33 @@
     return { pos: pos.subarray(0, n * 3), col: col.subarray(0, n * 3), count: n, bg: B.bg };
   }
 
+  // ---------------------------------------------------------------- real scans
+  // assets/hero/<key>.json + .bin, written by tools/make_hero_clouds.py from 3Dtrees.earth datasets.
+  function loadReal(name) {
+    var base = 'assets/hero/' + name;
+    return fetch(base + '.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (meta) {
+      return fetch(base + '.bin').then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); }).then(function (buf) {
+        var n = meta.n, xs = new Uint16Array(buf, 0, n), ys = new Uint16Array(buf, n * 2, n), zs = new Uint16Array(buf, n * 4, n);
+        var flag = new Uint8Array(buf, n * 6, n);
+        var B = BIOMES[name], half = meta.size / 2, zmax = meta.zmax || 30;
+        var pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
+        seed = 99;
+        for (var i = 0; i < n; i++) {
+          var j = i * 3, h = zs[i] / 100;
+          pos[j] = xs[i] / 100 - half; pos[j + 1] = h; pos[j + 2] = ys[i] / 100 - half;
+          var c, k = 0.85 + 0.3 * rnd();
+          if (flag[i]) { c = B.ground[i & 1]; k *= 1.6; }
+          else {
+            var t = Math.min(1, h / zmax), a = t < 0.5 ? VIRIDIS[0] : VIRIDIS[1], b2 = t < 0.5 ? VIRIDIS[1] : VIRIDIS[2], u = t < 0.5 ? t * 2 : (t - 0.5) * 2;
+            c = [a[0] + (b2[0] - a[0]) * u, a[1] + (b2[1] - a[1]) * u, a[2] + (b2[2] - a[2]) * u];
+          }
+          col[j] = Math.min(1, c[0] * k); col[j + 1] = Math.min(1, c[1] * k); col[j + 2] = Math.min(1, c[2] * k);
+        }
+        return { pos: pos, col: col, count: n, bg: B.bg, real: true, size: meta.size };
+      });
+    });
+  }
+
   // ---------------------------------------------------------------- GL setup
   var VS = [
     'attribute vec3 aPos; attribute vec3 aCol;',
@@ -259,7 +286,8 @@
   var fogFar = 0, fogTarget = 120;
   var stereo = false, orient = null, orient0 = null;
   var visible = true, running = false, last = 0;
-  var current = 'black-forest';
+  var current = 'black-forest', loadToken = 0;
+  var DATASETS = { 'black-forest': '2909', 'boreal': '1069', 'congo': '3140', 'borneo': '1477' };
 
   function resize() {
     var dpr = Math.min(window.devicePixelRatio || 1, small ? 1.5 : 2);
@@ -269,9 +297,16 @@
 
   function drawEye(x0, w, h, eyeOffset) {
     gl.viewport(x0, 0, w, h);
-    var fw = [Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)];
     var bob = reduceMotion ? 0 : Math.sin(camZ * 1.9) * 0.025;
-    var eye = [Math.sin(camZ * 0.05) * 0.6, 1.7 + bob + terrain(0, camZ), 0];
+    var eye, yw = yaw;
+    if (cloud.real) {
+      var r = cloud.size * 0.3, th = camZ / r;
+      eye = [Math.cos(th) * r, 1.7 + bob, Math.sin(th) * r];
+      yw = Math.atan2(-Math.sin(th), Math.cos(th)) + yaw - 0.35; // along the path, turned slightly towards the plot centre
+    } else {
+      eye = [Math.sin(camZ * 0.05) * 0.6, 1.7 + bob + terrain(0, camZ), 0];
+    }
+    var fw = [Math.sin(yw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yw) * Math.cos(pitch)];
     var vv = view(eye, fw);
     if (eyeOffset) { eye = [eye[0] + vv.s[0] * eyeOffset, eye[1], eye[2] + vv.s[2] * eyeOffset]; vv = view(eye, fw); }
     var aspect = w / h;
@@ -283,7 +318,7 @@
   }
 
   function frame(t) {
-    if (!running) return;
+    if (!running || !cloud) { running = false; return; }
     var dt = Math.min(0.05, (t - last) / 1000 || 0); last = t;
     camZ += speed * dt;
     fogFar += (fogTarget - fogFar) * Math.min(1, dt * 1.6);
@@ -299,7 +334,7 @@
     var bg = cloud.bg;
     gl.clearColor(bg[0], bg[1], bg[2], 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.uniform1f(U.uCamZ, camZ); gl.uniform1f(U.uL, L);
+    if (cloud.real) { gl.uniform1f(U.uCamZ, 0); gl.uniform1f(U.uL, 100000); } else { gl.uniform1f(U.uCamZ, camZ); gl.uniform1f(U.uL, L); }
     gl.uniform1f(U.uSize, small ? 0.11 : 0.13);
     gl.uniform3fv(U.uBg, bg); gl.uniform1f(U.uFogFar, fogFar);
     var W2 = canvas.width, H2 = canvas.height;
@@ -315,13 +350,24 @@
   function setBiome(name) {
     if (!BIOMES[name]) return;
     current = name;
-    upload(generate(name));
-    fogFar = 2; // forest emerges from the fog
+    var token = ++loadToken;
+    loadReal(name).catch(function () { return generate(name); }).then(function (c) {
+      if (token !== loadToken) return;
+      upload(c);
+      fogFar = 2; // forest emerges from the fog
+      fogTarget = c.real ? Math.max(60, c.size * 0.9) : 120;
+      hero.classList.toggle('is-real', !!c.real);
+      document.querySelectorAll('[data-hero-dataset]').forEach(function (el) {
+        var id = DATASETS[name] || '';
+        if (el.tagName === 'A') el.href = 'https://3dtrees.earth/datasets/' + id; else el.textContent = id;
+      });
+      hero.classList.add('ready');
+      start();
+    });
     hero.dataset.biome = name;
     document.querySelectorAll('[data-biome]').forEach(function (b) {
       if (b.tagName === 'BUTTON') b.setAttribute('aria-pressed', String(b.dataset.biome === name));
     });
-    start();
   }
   document.querySelectorAll('button[data-biome]').forEach(function (b) {
     b.addEventListener('click', function () {
@@ -393,5 +439,4 @@
   window.addEventListener('resize', function () { small = Math.min(window.innerWidth, window.innerHeight) < 700; start(); });
 
   setBiome(current);
-  hero.classList.add('ready');
 })();
