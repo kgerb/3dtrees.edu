@@ -203,3 +203,9 @@ figure.concept figcaption{padding:0 8px 6px}
 .pubs{margin:0;padding-left:1.1rem;display:flex;flex-direction:column;gap:6px;font-size:.9rem}
 .links{display:flex;flex-wrap:wrap;gap:6px 16px}
 @media (max-width:640px){.tabs a{font-size:.85rem;padding:8px 4px}}
+
+.links a{display:inline-flex;align-items:center;gap:6px;text-decoration:none;min-height:32px}
+.links a span{text-decoration:underline;text-underline-offset:2px}
+.links a:hover span{text-decoration-thickness:2px}
+.ico{width:18px;height:18px;flex:none}
+.mail-cta{font-weight:600;overflow-wrap:anywhere}
