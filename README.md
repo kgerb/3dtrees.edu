@@ -6,7 +6,7 @@ Plain HTML, CSS and JavaScript. No build step: edit and push.
 
 ## Files
 
-- `index.html`: all content. Three tabs (`#project`, `#education`, `#about`).
+- `index.html`: all content. Four tabs (`#project`, `#education`, `#news`, `#about`). New blog posts go at the top of `.posts` in the News tab, one `<article class="post">` each.
 - `style.css`: layout and colours (light and dark mode).
 - `site.js`: tab switching, the DE/EN switch and scroll reveals.
 - `forest.js`: the full-screen point-cloud forest on the Project tab (plain WebGL, no libraries). The four forest types and their tree mixes are in `BIOMES`. It shows real 3Dtrees.earth scans from `assets/hero/<key>.bin` when they exist and falls back to a generated illustration otherwise. Make those files with `python tools/make_hero_clouds.py crop.laz black-forest` (writes a dense `.hi.bin` for desktops and a light `.lo.bin` for phones) (keys: black-forest, boreal, congo, borneo; needs `pip install laspy lazrs numpy`). "Mit Cardboard-Brille ansehen" switches to side-by-side stereo and steers with the phone's motion sensors.

@@ -209,3 +209,8 @@ figure.concept figcaption{padding:0 8px 6px}
 .links a:hover span{text-decoration-thickness:2px}
 .ico{width:18px;height:18px;flex:none}
 .mail-cta{font-weight:600;overflow-wrap:anywhere}
+
+/* News */
+.posts{display:flex;flex-direction:column;gap:20px;max-width:46rem}
+.post{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:10px}
+.post time{font-size:.85rem;font-weight:600;color:var(--forest);letter-spacing:.02em}
