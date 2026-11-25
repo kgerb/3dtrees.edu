@@ -88,10 +88,10 @@ svg .loop{font-size:12px;font-weight:600;fill:var(--forest)}
 .place{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
 .place h3,.place p{padding:0 16px}
 .place h3{padding-top:14px}
-.place p{padding-bottom:16px;color:var(--muted);font-size:.92rem;padding-top:4px}
+.place p{color:var(--muted);font-size:.92rem;padding-top:4px}
 .pair{display:grid;grid-template-columns:1fr 2fr;gap:2px;background:var(--line)}
 .shot{position:relative;aspect-ratio:1/1;background:var(--sky-soft);overflow:hidden}
-.shot.pc{aspect-ratio:auto;background:#0d140f}
+.shot.pc{aspect-ratio:auto;background:#0d1117}
 .shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .shot img.missing{display:none}
 .shot span{position:absolute;left:6px;bottom:6px;font-size:.7rem;font-weight:600;letter-spacing:.04em;padding:2px 6px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff}
@@ -124,3 +124,66 @@ svg .loop{font-size:12px;font-weight:600;fill:var(--forest)}
 .site-footer{border-top:1px solid var(--line);color:var(--muted);font-size:.9rem}
 .site-footer .wrap{padding-top:24px;padding-bottom:40px;display:flex;flex-direction:column;gap:8px}
 .site-footer .small{font-size:.8rem}
+
+/* ---------- Immersive hero: point-cloud forest ---------- */
+.immersive{position:relative;height:calc(100svh - 61px);min-height:560px;max-height:1100px;overflow:hidden;background:#090b12;color:#f2f5f0;isolation:isolate}
+@media (max-width:640px){.immersive{height:calc(100svh - 105px);min-height:600px}}
+.immersive canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:pan-y;cursor:grab;opacity:0;transition:opacity 1.2s ease}
+.immersive.ready canvas{opacity:1}
+.immersive canvas:active{cursor:grabbing}
+.immersive.no-webgl{background:radial-gradient(120% 80% at 50% 100%,#1d5a3a 0%,#0c2416 45%,#090b12 100%)}
+.immersive-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(6,8,14,.78) 0%,rgba(6,8,14,.45) 45%,rgba(6,8,14,0) 75%),linear-gradient(0deg,rgba(6,8,14,.6) 0%,rgba(6,8,14,0) 30%)}
+@media (max-width:640px){.immersive-shade{background:linear-gradient(0deg,rgba(6,8,14,.85) 0%,rgba(6,8,14,.55) 55%,rgba(6,8,14,.15) 100%)}}
+.immersive-content{position:relative;z-index:1;height:100%;max-width:980px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-right,0px)) 72px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;justify-content:center;gap:16px;pointer-events:none}
+.immersive-content > *{max-width:36rem;pointer-events:auto}
+@media (max-width:640px){.immersive-content{justify-content:flex-end;padding-bottom:84px}}
+.immersive .eyebrow{color:#9fe3b6}
+.immersive h1{color:#fff;font-size:clamp(2.8rem,9vw,5.2rem);text-shadow:0 2px 24px rgba(0,0,0,.5)}
+.immersive .tagline{color:#f2f5f0;text-shadow:0 1px 12px rgba(0,0,0,.6)}
+.immersive .motto{border-left-color:#fde725}
+.immersive .motto p{color:#c8f0d4}
+.immersive .motto cite{color:#b5c2bb}
+.travel{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.travel-label{font-size:.85rem;color:#b5c2bb;width:100%}
+.travel button,.vr-enter,.vr-exit,.beam{appearance:none;font:500 .92rem var(--body);cursor:pointer;border-radius:999px;min-height:40px;padding:8px 14px}
+.travel button{border:1px solid rgba(255,255,255,.35);background:rgba(10,14,22,.45);color:#fff;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.travel button:hover{border-color:#fff}
+.travel button[aria-pressed="true"]{background:#fde725;border-color:#fde725;color:#151a10;font-weight:600}
+.vr-enter{align-self:flex-start;display:inline-flex;align-items:center;gap:10px;border:0;background:#2f6b47;color:#fff;font-weight:600;padding:10px 18px}
+.vr-enter svg{width:22px;height:22px}
+.vr-enter:hover{background:#3b8459}
+.immersive-note{position:absolute;right:16px;bottom:14px;z-index:1;margin:0;font-size:.75rem;color:#c3ccc6;text-shadow:0 1px 6px rgba(0,0,0,.8);max-width:60%;text-align:right}
+.scroll-cue{position:absolute;left:50%;bottom:12px;z-index:1;transform:translateX(-50%);width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.4);font-size:1.1rem;animation:cue 2.4s ease-in-out infinite}
+@keyframes cue{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,6px)}}
+@media (max-width:640px){.immersive-note{left:16px;right:72px;bottom:16px;max-width:none;text-align:left;font-size:.7rem}.scroll-cue{left:auto;right:16px;transform:none;animation:none}.immersive-content{padding-bottom:64px;gap:12px}.immersive .eyebrow{font-size:.68rem}}
+.vr-exit{display:none;position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:3;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.55);color:#fff}
+/* Cardboard mode: canvas fills the screen, side-by-side stereo */
+.immersive.vr{position:fixed;inset:0;height:100vh;height:100dvh;max-height:none;min-height:0;z-index:50}
+.immersive.vr .immersive-content,.immersive.vr .immersive-shade,.immersive.vr .immersive-note,.immersive.vr .scroll-cue{display:none}
+.immersive.vr .vr-exit{display:block}
+.immersive.vr::after{content:"";position:absolute;top:0;bottom:0;left:50%;width:2px;background:#000;z-index:2}
+body.vr-lock{overflow:hidden}
+
+/* Gallery: beam-in button */
+.place-actions{margin-top:auto;padding:0 16px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.dataset{font-size:.82rem}
+.beam{border:1px solid var(--forest);background:transparent;color:var(--forest);font-weight:600;min-height:36px;padding:6px 14px}
+.beam:hover{background:var(--leaf-soft)}
+.place p{padding-bottom:12px}
+
+/* Intro under the hero */
+.intro{display:flex;flex-direction:column;gap:12px;max-width:46rem}
+.intro .lead{color:var(--fg);font-size:1.15rem}
+#project > .wrap{padding-top:48px}
+
+/* Final concept figure */
+.diagram picture{display:block}
+.diagram picture img{display:block;width:100%;height:auto;min-width:0;border-radius:8px}
+figure.concept{padding:12px}
+figure.concept figcaption{padding:0 8px 6px}
+
+/* Scroll reveal (only when JS is on and motion is fine) */
+@media (prefers-reduced-motion:no-preference){
+  .js .reveal{opacity:0;transform:translateY(24px);transition:opacity .8s ease,transform .8s ease}
+  .js .reveal.in{opacity:1;transform:none}
+}

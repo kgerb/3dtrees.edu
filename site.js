@@ -40,7 +40,10 @@
     setTitle();
     if (focus) window.scrollTo(0, 0);
   }
-  window.addEventListener('hashchange', function () { showTab(location.hash.slice(1), true); });
+  window.addEventListener('hashchange', function () {
+    var id = location.hash.slice(1);
+    if (TABS.indexOf(id) >= 0 || id === '') showTab(id, true); // other hashes are in-page anchors
+  });
 
   // Hide image slots whose file is not there yet, so placeholders show instead.
   document.querySelectorAll('.shot img, .avatar img').forEach(function (img) {
@@ -50,5 +53,18 @@
   });
 
   setLang(root.lang === 'en' ? 'en' : 'de', false);
-  showTab(location.hash.slice(1), false);
+  var h0 = location.hash.slice(1), target = h0 && document.getElementById(h0);
+  var panel = target && target.closest('[data-tab]');
+  showTab(panel ? panel.dataset.tab : h0, false);
+})();
+
+// Scroll reveal
+(function () {
+  document.documentElement.classList.add('js');
+  var els = document.querySelectorAll('.reveal');
+  if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
+  var io = new IntersectionObserver(function (es) {
+    es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { rootMargin: '0px 0px -8% 0px' });
+  els.forEach(function (e) { io.observe(e); });
 })();

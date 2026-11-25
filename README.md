@@ -8,7 +8,9 @@ Plain HTML, CSS and JavaScript. No build step: edit and push.
 
 - `index.html`: all content. Three tabs (`#project`, `#education`, `#about`).
 - `style.css`: layout and colours (light and dark mode).
-- `site.js`: tab switching and the DE/EN switch.
+- `site.js`: tab switching, the DE/EN switch and scroll reveals.
+- `forest.js`: the full-screen point-cloud forest on the Project tab (plain WebGL, no libraries). The four forest types and their tree mixes are in `BIOMES`. It is an illustration, generated in the browser, not a real scan. "Mit Cardboard-Brille ansehen" switches to side-by-side stereo and steers with the phone's motion sensors.
+- `assets/figure/`: the concept figure, wide and mobile versions per language.
 - `assets/examples/`: gallery images (see below).
 - `assets/people/`: profile photos (optional).
 
@@ -31,7 +33,7 @@ Gallery: put files into `assets/examples/` named `<region>-embedding.webp` (squa
 
 Photos: put `kilian.jpg`, `marina.jpg`, `teja.jpg` into `assets/people/` and replace the initials in the `.avatar` div with `<img src="assets/people/kilian.jpg" alt="">`.
 
-Concept figure: replace the inline `<svg>` inside `#concept-figure` with the final figure files.
+Concept figure: replace the files in `assets/figure/` (same names).
 
 ## Preview locally
 

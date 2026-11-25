@@ -45,14 +45,15 @@
 
 <!-- ============================== PROJECT ============================== -->
 <section class="tab-panel" id="project" data-tab="project">
-  <div class="wrap">
-
-    <header class="hero">
+  <section class="immersive" id="hero-forest" aria-labelledby="hero-title">
+    <canvas id="forest-canvas" aria-hidden="true"></canvas>
+    <div class="immersive-shade" aria-hidden="true"></div>
+    <div class="immersive-content">
       <span class="eyebrow">
         <span lang="de">Hochschulwettbewerb 2027 · Wissenschaftsjahr Raumfahrt · Universität Freiburg</span>
         <span lang="en">University Competition 2027 · Science Year: Space · University of Freiburg</span>
       </span>
-      <h1>ForestVerse</h1>
+      <h1 id="hero-title">ForestVerse</h1>
       <p class="tagline">
         <span lang="de">Jeder Wald, nur ein Klick entfernt.</span>
         <span lang="en">Every forest, just one click away.</span>
@@ -62,76 +63,43 @@
         <p lang="en">“We only protect what we love.”</p>
         <cite>Baba Dioum</cite>
       </blockquote>
+      <div class="travel" role="group" aria-labelledby="travel-label">
+        <span id="travel-label" class="travel-label"><span lang="de">Reise in den Wald:</span><span lang="en">Travel to a forest:</span></span>
+        <button type="button" data-biome="black-forest"><span lang="de">Schwarzwald</span><span lang="en">Black Forest</span></button>
+        <button type="button" data-biome="boreal"><span lang="de">Finnland</span><span lang="en">Finland</span></button>
+        <button type="button" data-biome="congo"><span lang="de">Kamerun</span><span lang="en">Cameroon</span></button>
+        <button type="button" data-biome="borneo">Borneo</button>
+      </div>
+      <button type="button" class="vr-enter" id="vr-enter">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-5l-2-3h-4l-2 3H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="7.5" cy="11.5" r="2" fill="currentColor"/><circle cx="16.5" cy="11.5" r="2" fill="currentColor"/></svg>
+        <span lang="de">Mit Cardboard-Brille ansehen</span><span lang="en">View with cardboard headset</span>
+      </button>
+    </div>
+    <p class="immersive-note">
+      <span lang="de">Illustration: prozedural erzeugte Punktwolke. Ziehen zum Umsehen.</span>
+      <span lang="en">Illustration: procedurally generated point cloud. Drag to look around.</span>
+    </p>
+    <a class="scroll-cue" href="#project-intro" aria-label="Weiter"><span aria-hidden="true">↓</span></a>
+    <button type="button" class="vr-exit" id="vr-exit"><span lang="de">VR beenden</span><span lang="en">Exit VR</span></button>
+  </section>
+  <div class="wrap">
+
+    <section class="intro reveal" id="project-intro">
       <p class="lead" lang="de">Die meisten Wälder der Erde wird kaum jemand je betreten. Satelliten vermessen sie trotzdem, jeden Tag und überall. Wir verbinden diese Daten mit der weltweit größten Sammlung von 3D-Laserscans von Wäldern auf <a href="https://3dtrees.earth">3Dtrees.earth</a> und trainieren ein KI-Modell, das die Struktur jedes Waldes der Welt simuliert. Ein Klick auf die Weltkarte, und man steht mitten im Wald, mit nichts als einem Smartphone und einer einfachen Cardboard-VR-Brille.</p>
       <p class="lead" lang="en">Most of the world’s forests will never be visited by most of us. Satellites measure them anyway, every day and everywhere. We combine these data with the world’s largest collection of 3D laser scans of forests on <a href="https://3dtrees.earth">3Dtrees.earth</a> and train an AI model that simulates the structure of every forest on Earth. One click on the world map, and you are standing in the middle of a forest, with nothing but a smartphone and a simple cardboard VR viewer.</p>
-    </header>
+    </section>
 
     <!-- Concept figure slot. Replace the inline SVG with assets/concept-figure.(de|en).svg once the final figure is ready. -->
-    <figure class="concept" id="concept-figure">
+    <figure class="concept reveal" id="concept-figure">
       <div class="diagram">
-        <svg viewBox="0 0 900 400" role="img" aria-labelledby="dgt dgd">
-          <title id="dgt" data-de="Konzept: von den Daten zum erfahrbaren Wald" data-en="Concept: from data to a forest you can experience">Konzept: von den Daten zum erfahrbaren Wald</title>
-          <desc id="dgd" data-de="Satellitendaten und 3D-Laserscans fließen in ein KI-Modell. Daraus entsteht eine Weltkarte mit begehbaren Wäldern, die Jugendliche per Cardboard-Brille besuchen. Ihre Urteile fließen zurück und prüfen das Modell." data-en="Satellite data and 3D laser scans feed an AI model. It produces a world map of walkable forests that young people visit with a cardboard viewer. Their judgements flow back and test the model.">Satellitendaten und 3D-Laserscans fließen in ein KI-Modell. Daraus entsteht eine Weltkarte mit begehbaren Wäldern, die Jugendliche per Cardboard-Brille besuchen. Ihre Urteile fließen zurück und prüfen das Modell.</desc>
-          <defs>
-            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/></marker>
-          </defs>
-          <text x="100" y="26" text-anchor="middle" class="col" data-de="DATEN" data-en="DATA">DATEN</text>
-          <text x="345" y="26" text-anchor="middle" class="col" data-de="MODELL" data-en="MODEL">MODELL</text>
-          <text x="560" y="26" text-anchor="middle" class="col" data-de="WELTKARTE" data-en="WORLD MAP">WELTKARTE</text>
-          <text x="790" y="26" text-anchor="middle" class="col" data-de="KLASSENZIMMER" data-en="CLASSROOM">KLASSENZIMMER</text>
-
-          <rect x="10" y="48" width="180" height="120" rx="12" fill="var(--sky-soft)" stroke="var(--sky)"/>
-          <g transform="translate(100,82)" stroke="var(--sky)" stroke-width="2" fill="none">
-            <rect x="-8" y="-8" width="16" height="16" fill="var(--sky)"/>
-            <rect x="-34" y="-5" width="22" height="10"/><rect x="12" y="-5" width="22" height="10"/>
-            <path d="M0 8 L-10 26 M0 8 L10 26" stroke-dasharray="3 3"/>
-          </g>
-          <text x="100" y="128" text-anchor="middle" class="t" data-de="Satelliten" data-en="Satellites">Satelliten</text>
-          <text x="100" y="148" text-anchor="middle" class="s" data-de="GEDI-Laser, Sentinel, Landsat" data-en="GEDI lidar, Sentinel, Landsat">GEDI-Laser, Sentinel, Landsat</text>
-
-          <rect x="10" y="212" width="180" height="120" rx="12" fill="var(--leaf-soft)" stroke="var(--forest)"/>
-          <g transform="translate(100,250)" fill="var(--forest)">
-            <circle cx="0" cy="-12" r="3"/><circle cx="-8" cy="-6" r="3"/><circle cx="8" cy="-6" r="3"/><circle cx="-12" cy="2" r="3"/><circle cx="0" cy="0" r="3"/><circle cx="12" cy="2" r="3"/><circle cx="-6" cy="8" r="3"/><circle cx="6" cy="8" r="3"/>
-            <rect x="-2" y="10" width="4" height="16"/>
-          </g>
-          <text x="100" y="294" text-anchor="middle" class="t" data-de="3D-Laserscans" data-en="3D laser scans">3D-Laserscans</text>
-          <text x="100" y="314" text-anchor="middle" class="s" data-de="3.000+ Wälder, 3Dtrees.earth" data-en="3,000+ forests, 3Dtrees.earth">3.000+ Wälder, 3Dtrees.earth</text>
-
-          <rect x="260" y="130" width="170" height="120" rx="12" fill="var(--surface)" stroke="var(--fg)" stroke-width="1.5"/>
-          <text x="345" y="176" text-anchor="middle" class="t" data-de="KI-Modell" data-en="AI model">KI-Modell</text>
-          <text x="345" y="198" text-anchor="middle" class="s" data-de="AlphaEarth-Embeddings" data-en="AlphaEarth embeddings">AlphaEarth-Embeddings</text>
-          <text x="345" y="216" text-anchor="middle" class="s" data-de="+ 3D-Scans" data-en="+ 3D scans">+ 3D-Scans</text>
-
-          <path d="M190 108 C230 108 230 165 258 170" fill="none" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#ar)"/>
-          <path d="M190 272 C230 272 230 215 258 210" fill="none" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#ar)"/>
-
-          <rect x="480" y="110" width="160" height="160" rx="80" fill="var(--sky-soft)" stroke="var(--sky)"/>
-          <path d="M512 160 q18 -14 34 -4 q10 10 -4 22 q-16 6 -26 -4 z M560 150 q22 -10 40 4 q8 18 -10 30 q-20 4 -26 -12 z M530 210 q16 -6 26 8 q2 18 -14 20 q-14 -4 -12 -28 z M580 210 q16 0 22 14 q-6 14 -20 10 z" fill="var(--forest)" opacity=".75"/>
-          <g transform="translate(588,196)"><path d="M0 0 c-7 -10 -7 -18 0 -22 c7 4 7 12 0 22 z" fill="var(--sun)"/><circle cx="0" cy="-15" r="3" fill="var(--surface)"/></g>
-          <text x="560" y="296" text-anchor="middle" class="t" data-de="Klick auf die Karte" data-en="Click on the map">Klick auf die Karte</text>
-          <text x="560" y="316" text-anchor="middle" class="s" data-de="echt oder als KI markiert" data-en="real, or marked as AI">echt oder als KI markiert</text>
-
-          <path d="M430 190 L476 190" fill="none" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#ar)"/>
-
-          <rect x="690" y="48" width="200" height="284" rx="12" fill="var(--sun-soft)" stroke="var(--sun)"/>
-          <g transform="translate(790,84)" fill="none" stroke="var(--fg)" stroke-width="2">
-            <rect x="-26" y="-12" width="52" height="24" rx="6"/><circle cx="-11" cy="0" r="6"/><circle cx="11" cy="0" r="6"/>
-          </g>
-          <text x="790" y="122" text-anchor="middle" class="t" data-de="Cardboard-Brille" data-en="Cardboard viewer">Cardboard-Brille</text>
-          <text x="712" y="156" class="step" data-de="1 Vorstellen" data-en="1 Imagine">1 Vorstellen</text>
-          <text x="712" y="174" class="s" data-de="Wie sieht der Kongo aus?" data-en="What does the Congo look like?">Wie sieht der Kongo aus?</text>
-          <text x="712" y="202" class="step" data-de="2 Erfahren" data-en="2 Experience">2 Erfahren</text>
-          <text x="712" y="220" class="s" data-de="hineinbeamen, umsehen" data-en="beam in and walk around">hineinbeamen, umsehen</text>
-          <text x="712" y="248" class="step" data-de="3 Abgleichen" data-en="3 Compare">3 Abgleichen</text>
-          <text x="712" y="266" class="s" data-de="Echt oder generiert?" data-en="Real or generated?">Echt oder generiert?</text>
-          <text x="712" y="294" class="step" data-de="4 Diskutieren" data-en="4 Discuss">4 Diskutieren</text>
-          <text x="712" y="312" class="s" data-de="Virtuell erlebt, echt geschützt?" data-en="Seen virtually, protected for real?">Virtuell erlebt, echt geschützt?</text>
-
-          <path d="M640 190 L686 190" fill="none" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#ar)"/>
-
-          <path d="M790 334 C790 382 345 382 345 254" fill="none" stroke="var(--forest)" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ar)"/>
-          <text x="560" y="378" text-anchor="middle" class="loop" data-de="Urteile der Jugendlichen prüfen das Modell an echten Scans" data-en="Young people’s judgements test the model against real scans">Urteile der Jugendlichen prüfen das Modell an echten Scans</text>
-        </svg>
+        <picture lang="de">
+          <source media="(max-width: 700px)" srcset="assets/figure/concept-figure-mobile.de.svg">
+          <img src="assets/figure/concept-figure.de.svg" width="1600" height="1000" loading="lazy" alt="Konzept von ForestVerse in fünf Schritten: 1 Wälder vermessen mit über 3.000 echten 3D-Laserscans auf 3Dtrees.earth, 2 aus dem All sehen mit AlphaEarth-Embeddings, 3 die KI lernt den Zusammenhang zwischen Satellitenmerkmalen und 3D-Waldstruktur, 4 das Modell erzeugt jeden Wald der Welt als Punktwolke, 5 man erlebt den Wald mit Smartphone und Cardboard-Brille.">
+        </picture>
+        <picture lang="en">
+          <source media="(max-width: 700px)" srcset="assets/figure/concept-figure-mobile.en.svg">
+          <img src="assets/figure/concept-figure.en.svg" width="1600" height="1000" loading="lazy" alt="The ForestVerse concept in five steps: 1 measure forests with more than 3,000 real 3D laser scans on 3Dtrees.earth, 2 see them from space with AlphaEarth embeddings, 3 AI learns the link between satellite features and 3D forest structure, 4 the model generates any forest on Earth as a point cloud, 5 experience the forest with a smartphone and cardboard headset.">
+        </picture>
       </div>
       <figcaption>
         <span lang="de">Vom All ins Klassenzimmer: Satellitendaten und echte 3D-Scans werden zu begehbaren Wäldern.</span>
@@ -139,7 +107,7 @@
       </figcaption>
     </figure>
 
-    <section class="block">
+    <section class="block reveal">
       <h2><span lang="de">Der Weg der Daten</span><span lang="en">How the data travels</span></h2>
       <ol class="journey">
         <li>
@@ -170,51 +138,67 @@
     </section>
 
     <!-- Example forests. Drop screenshots into assets/examples/ with the file names below. -->
-    <section class="block">
+    <section class="block reveal">
       <h2><span lang="de">Wälder der Welt</span><span lang="en">Forests of the world</span></h2>
-      <p class="sub" lang="de">Vier Beispiele, wie unterschiedlich Wälder aussehen. Links der Satelliten-Fingerabdruck (AlphaEarth), rechts der Wald als 3D-Punktwolke.</p>
-      <p class="sub" lang="en">Four examples of how different forests look. Left: the satellite fingerprint (AlphaEarth). Right: the forest as a 3D point cloud.</p>
+      <p class="sub" lang="de">Vier Beispiele, wie unterschiedlich Wälder aussehen. Links der Satelliten-Fingerabdruck (AlphaEarth), rechts der Wald als 3D-Punktwolke. Die Bilder sind vorerst Illustrationen.</p>
+      <p class="sub" lang="en">Four examples of how different forests look. Left: the satellite fingerprint (AlphaEarth). Right: the forest as a 3D point cloud. The images are illustrations for now.</p>
       <div class="gallery">
         <article class="place" data-example="black-forest">
           <div class="pair">
             <div class="shot emb"><img src="assets/examples/black-forest-embedding.webp" alt="" loading="lazy"><span lang="de">Satellit</span><span lang="en">Satellite</span></div>
             <div class="shot pc"><img src="assets/examples/black-forest-pointcloud.webp" alt="" loading="lazy"><span lang="de">Punktwolke</span><span lang="en">Point cloud</span></div>
           </div>
-          <h3><span lang="de">Schwarzwald, Deutschland</span><span lang="en">Black Forest, Germany</span></h3>
+          <h3><span lang="de">Nationalpark Schwarzwald, Deutschland</span><span lang="en">Black Forest National Park, Germany</span></h3>
           <p lang="de">Bergmischwald aus Fichte, Tanne und Buche, der Wald vor unserer Haustür.</p>
           <p lang="en">Mountain mixed forest of spruce, fir and beech: the forest on our doorstep.</p>
+          <div class="place-actions">
+            <button type="button" class="beam" data-biome="black-forest" data-scroll-hero><span lang="de">Hineinbeamen ↑</span><span lang="en">Beam in ↑</span></button>
+            <a class="dataset" href="https://3dtrees.earth/datasets/2909"><span lang="de">Datensatz 2909</span><span lang="en">Dataset 2909</span> · CC BY 4.0</a>
+          </div>
         </article>
         <article class="place" data-example="boreal">
           <div class="pair">
             <div class="shot emb"><img src="assets/examples/boreal-embedding.webp" alt="" loading="lazy"><span lang="de">Satellit</span><span lang="en">Satellite</span></div>
             <div class="shot pc"><img src="assets/examples/boreal-pointcloud.webp" alt="" loading="lazy"><span lang="de">Punktwolke</span><span lang="en">Point cloud</span></div>
           </div>
-          <h3><span lang="de">Borealer Wald, Kanada</span><span lang="en">Boreal forest, Canada</span></h3>
-          <p lang="de">Schmale Nadelbäume, lichte Bestände, lange Winter.</p>
-          <p lang="en">Slender conifers, open stands, long winters.</p>
+          <h3><span lang="de">Borealer Wald, Evo, Finnland</span><span lang="en">Boreal forest, Evo, Finland</span></h3>
+          <p lang="de">Kiefern, Fichten und Birken im südfinnischen Nadelwald, lange Winter.</p>
+          <p lang="en">Pine, spruce and birch in southern Finland’s conifer forest, long winters.</p>
+          <div class="place-actions">
+            <button type="button" class="beam" data-biome="boreal" data-scroll-hero><span lang="de">Hineinbeamen ↑</span><span lang="en">Beam in ↑</span></button>
+            <a class="dataset" href="https://3dtrees.earth/datasets/1069"><span lang="de">Datensatz 1069</span><span lang="en">Dataset 1069</span> · CC BY 4.0</a>
+          </div>
         </article>
         <article class="place" data-example="congo">
           <div class="pair">
             <div class="shot emb"><img src="assets/examples/congo-embedding.webp" alt="" loading="lazy"><span lang="de">Satellit</span><span lang="en">Satellite</span></div>
             <div class="shot pc"><img src="assets/examples/congo-pointcloud.webp" alt="" loading="lazy"><span lang="de">Punktwolke</span><span lang="en">Point cloud</span></div>
           </div>
-          <h3><span lang="de">Kongobecken, Zentralafrika</span><span lang="en">Congo Basin, Central Africa</span></h3>
+          <h3><span lang="de">Dja-Reservat, Kamerun (Kongobecken)</span><span lang="en">Dja Reserve, Cameroon (Congo Basin)</span></h3>
           <p lang="de">Der zweitgrößte Regenwald der Erde, mit Baumriesen über 50 m.</p>
           <p lang="en">The second-largest rainforest on Earth, with giants over 50 m tall.</p>
+          <div class="place-actions">
+            <button type="button" class="beam" data-biome="congo" data-scroll-hero><span lang="de">Hineinbeamen ↑</span><span lang="en">Beam in ↑</span></button>
+            <a class="dataset" href="https://3dtrees.earth/datasets/3140"><span lang="de">Datensatz 3140</span><span lang="en">Dataset 3140</span> · CC BY 4.0</a>
+          </div>
         </article>
         <article class="place" data-example="borneo">
           <div class="pair">
             <div class="shot emb"><img src="assets/examples/borneo-embedding.webp" alt="" loading="lazy"><span lang="de">Satellit</span><span lang="en">Satellite</span></div>
             <div class="shot pc"><img src="assets/examples/borneo-pointcloud.webp" alt="" loading="lazy"><span lang="de">Punktwolke</span><span lang="en">Point cloud</span></div>
           </div>
-          <h3><span lang="de">Tieflandregenwald, Borneo</span><span lang="en">Lowland rainforest, Borneo</span></h3>
-          <p lang="de">Vielschichtig, artenreich und durch Abholzung stark bedroht.</p>
-          <p lang="en">Many-layered, species-rich and under heavy threat from logging.</p>
+          <h3><span lang="de">Sepilok, Borneo, Malaysia</span><span lang="en">Sepilok, Borneo, Malaysia</span></h3>
+          <p lang="de">Tieflandregenwald: vielschichtig, artenreich und durch Abholzung stark bedroht.</p>
+          <p lang="en">Lowland rainforest: many-layered, species-rich and under heavy threat from logging.</p>
+          <div class="place-actions">
+            <button type="button" class="beam" data-biome="borneo" data-scroll-hero><span lang="de">Hineinbeamen ↑</span><span lang="en">Beam in ↑</span></button>
+            <a class="dataset" href="https://3dtrees.earth/datasets/1477"><span lang="de">Datensatz 1477</span><span lang="en">Dataset 1477</span> · CC BY 4.0</a>
+          </div>
         </article>
       </div>
     </section>
 
-    <section class="block honest">
+    <section class="block honest reveal">
       <h2><span lang="de">Echt oder simuliert?</span><span lang="en">Real or simulated?</span></h2>
       <p lang="de">Wir sagen offen, was wir wissen und was nicht. Gemessene Wälder sind echt, fehlende erzeugt das Modell und kennzeichnet sie klar als Schätzung. Die Höhe kann dabei einige Meter danebenliegen. Genau diese Grenze ist Teil des Lernens: Was kann ein Satellit sehen, und wann braucht es Messungen am Boden?</p>
       <p lang="en">We are open about what we know and what we don’t. Measured forests are real; missing ones are generated by the model and clearly marked as estimates. Heights can be off by a few metres. That limit is part of the learning: what can a satellite see, and when do we need measurements on the ground?</p>
@@ -251,14 +235,14 @@
       </section>
     </div>
 
-    <section class="block">
+    <section class="block reveal">
       <h2><span lang="de">Eine Waldreise in vier Schritten</span><span lang="en">A forest journey in four steps</span></h2>
       <ol class="journey">
         <li>
           <span class="num">1</span>
           <h3><span lang="de">Vorstellen</span><span lang="en">Imagine</span></h3>
-          <p lang="de">Wie sieht ein Wald in Kanada, im Kongo oder auf Borneo aus? Die Jugendlichen skizzieren und beschreiben ihr Bild.</p>
-          <p lang="en">What does a forest in Canada, the Congo or Borneo look like? Students sketch and describe their picture.</p>
+          <p lang="de">Wie sieht ein Wald in Finnland, im Kongobecken oder auf Borneo aus? Die Jugendlichen skizzieren und beschreiben ihr Bild.</p>
+          <p lang="en">What does a forest in Finland, the Congo Basin or Borneo look like? Students sketch and describe their picture.</p>
         </li>
         <li>
           <span class="num">2</span>
@@ -281,7 +265,7 @@
       </ol>
     </section>
 
-    <section class="block">
+    <section class="block reveal">
       <h2><span lang="de">Fragen für die Diskussion</span><span lang="en">Questions for discussion</span></h2>
       <ul class="questions">
         <li><span lang="de">Wie sieht „Wald“ in meinem Kopf aus, und woher kommt dieses Bild?</span><span lang="en">What does “forest” look like in my head, and where does that picture come from?</span></li>
@@ -293,13 +277,13 @@
       </ul>
     </section>
 
-    <section class="block feature">
+    <section class="block feature reveal">
       <h2><span lang="de">Weltwälder-Tag</span><span lang="en">World Forest Day</span></h2>
       <p lang="de">Wir schicken Cardboard-Brillen an Partnerschulen auf allen Kontinenten. In einer gemeinsamen Videokonferenz zeigen sich die Klassen gegenseitig die Wälder vor ihrer Haustür. Ein offener Abend in Freiburg präsentiert die Ergebnisse.</p>
       <p lang="en">We send cardboard viewers to partner schools on every continent. In a shared video call, classes show each other the forests on their doorsteps. An open evening in Freiburg presents the results.</p>
     </section>
 
-    <section class="block">
+    <section class="block reveal">
       <h2><span lang="de">Offen über 2027 hinaus</span><span lang="en">Open beyond 2027</span></h2>
       <p lang="de">Ein offenes Unterrichtskit und ein FÖJ-Seminarmodul sichern die Waldreisen nach Projektende. Daten, Code und Materialien bleiben frei zugänglich: Jeder Mensch mit Smartphone kann die Karte nutzen.</p>
       <p lang="en">An open teaching kit and a seminar module for voluntary-year groups keep the forest journeys going after the project ends. Data, code and materials stay openly available: anyone with a smartphone can use the map.</p>
@@ -351,7 +335,7 @@
       </article>
     </div>
 
-    <section class="block">
+    <section class="block reveal">
       <h2><span lang="de">Mitmachen</span><span lang="en">Get involved</span></h2>
       <p lang="de">Sie unterrichten an einer Schule, leiten eine Seminargruppe oder möchten Partnerschule werden? Wir freuen uns über Kontakt über <a href="https://3dtrees.earth">3Dtrees.earth</a>.</p>
       <p lang="en">Do you teach at a school, run a seminar group or want to become a partner school? Get in touch via <a href="https://3dtrees.earth">3Dtrees.earth</a>.</p>
@@ -372,5 +356,6 @@
 </footer>
 
 <script src="site.js"></script>
+<script src="forest.js"></script>
 </body>
 </html>
