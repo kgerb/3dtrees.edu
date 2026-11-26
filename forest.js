@@ -284,7 +284,7 @@
   var VS = [
     'attribute vec3 aPos; attribute vec3 aCol;',
     'uniform mat4 uView; uniform mat4 uProj; uniform float uCamZ; uniform float uL; uniform float uFocal; uniform float uSize; uniform float uMaxPx; uniform float uNear; uniform float uFogFar;',
-    'varying vec3 vCol; varying float vFog;',
+    'varying vec3 vCol; varying float vFog; varying float vLd;',
     'void main(){',
     '  vec3 p = aPos;',
     '  p.z = mod(p.z - uCamZ + 0.12 * uL, uL) - 0.12 * uL;',
@@ -294,14 +294,15 @@
     '  gl_PointSize = clamp(uSize * uFocal / d, 1.5, uMaxPx);',
     '  if (d < uNear) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);', // hide leaves brushing the camera
     '  vCol = aCol; vFog = smoothstep(uFogFar * 0.3, uFogFar, d) * 0.92;',
+    '  vLd = clamp((log2(d) - 1.0) / 7.0, 0.004, 1.0);', // log depth 2 m .. 256 m in alpha, read by the depth pass
     '}'
   ].join('\n');
   var FS = [
     'precision mediump float;',
-    'varying vec3 vCol; varying float vFog;',
+    'varying vec3 vCol; varying float vFog; varying float vLd;',
     'uniform vec3 uBg;',
     'void main(){',
-    '  gl_FragColor = vec4(mix(vCol, uBg, vFog), 1.0);',
+    '  gl_FragColor = vec4(mix(vCol, uBg, vFog), vLd);',
     '}'
   ].join('\n');
 
@@ -320,44 +321,38 @@
   gl.enable(gl.DEPTH_TEST);
 
   // ---------------------------------------------------------------- eye-dome lighting
-  // Depth cue for real scans: points are rendered into a texture, then each pixel is darkened by how much
-  // its neighbours sit in front of it (in log depth). Edges of stems and crowns get a dark rim, so you can
-  // see which branch is in front. Needs WEBGL_depth_texture; without it the scene is drawn as before.
+  // Depth cue for real scans: points are rendered into one RGBA texture whose alpha holds log depth, then a
+  // single full-screen pass darkens each pixel by how much its four neighbours sit in front of it. Edges of
+  // stems and crowns get a dark rim, so you can see which branch is in front. One texture, five reads per
+  // pixel, no depth texture: about as cheap as a depth cue gets.
   var EDL_FS = [
     'precision highp float;',
-    'uniform sampler2D uColor; uniform sampler2D uDepth;',
-    'uniform vec2 uPx; uniform float uRadius; uniform float uStrength; uniform float uN; uniform float uF;',
+    'uniform sampler2D uColor; uniform vec2 uPx; uniform float uK;',
     'varying vec2 vUv;',
-    'float ld(vec2 uv){ float z = texture2D(uDepth, uv).r; if (z >= 1.0) return 0.0;',
-    '  float lin = 2.0 * uN * uF / (uF + uN - (z * 2.0 - 1.0) * (uF - uN)); return log2(lin); }',
-    'float nb(float d, vec2 o){ float dn = ld(vUv + o * uPx * uRadius); return dn == 0.0 ? 0.0 : (d == 0.0 ? 100.0 : min(1.0, max(0.0, d - dn))); }',
+    'float nb(float d, vec2 o){ float dn = texture2D(uColor, vUv + o * uPx).a; return dn == 0.0 ? 0.0 : (d == 0.0 ? 100.0 : min(1.0, max(0.0, (d - dn) * 7.0))); }',
     'void main(){',
-    '  float d = ld(vUv);', // capped per neighbour: a twig 10 m in front shades no harder than one 2x closer
+    '  vec4 c = texture2D(uColor, vUv); float d = c.a;', // capped per neighbour: a twig 10 m in front shades no harder than one 2x closer
     '  float sum = nb(d, vec2(1.0, 0.0)) + nb(d, vec2(-1.0, 0.0)) + nb(d, vec2(0.0, 1.0)) + nb(d, vec2(0.0, -1.0));',
-    '  float shade = d == 0.0 ? exp(-sum / 4.0 * 300.0 * uStrength) : mix(0.3, 1.0, exp(-sum / 4.0 * 300.0 * uStrength));',
-    '  vec4 c = texture2D(uColor, vUv);',
-    '  gl_FragColor = vec4(c.rgb * shade, 1.0);',
+    '  float e = exp(-sum * uK);',
+    '  gl_FragColor = vec4(c.rgb * (d == 0.0 ? e : mix(0.3, 1.0, e)), 1.0);',
     '}'
   ].join('\n');
   var EDL_VS = 'attribute vec2 aXY; varying vec2 vUv; void main(){ vUv = aXY * 0.5 + 0.5; gl_Position = vec4(aXY, 0.0, 1.0); }';
   var edl = null;
   (function () {
-    if (!gl.getExtension('WEBGL_depth_texture')) return;
     var p = gl.createProgram();
     gl.attachShader(p, sh(gl.VERTEX_SHADER, EDL_VS));
     gl.attachShader(p, sh(gl.FRAGMENT_SHADER, EDL_FS));
     gl.bindAttribLocation(p, 0, 'aXY');
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) return;
-    var e = { prog: p, U: {}, quad: gl.createBuffer(), fbo: gl.createFramebuffer(), color: gl.createTexture(), depth: gl.createTexture(), w: 0, h: 0 };
-    ['uColor', 'uDepth', 'uPx', 'uRadius', 'uStrength', 'uN', 'uF'].forEach(function (k) { e.U[k] = gl.getUniformLocation(p, k); });
+    var e = { prog: p, U: {}, quad: gl.createBuffer(), fbo: gl.createFramebuffer(), color: gl.createTexture(), depth: gl.createRenderbuffer(), w: 0, h: 0 };
+    ['uColor', 'uPx', 'uK'].forEach(function (k) { e.U[k] = gl.getUniformLocation(p, k); });
     gl.bindBuffer(gl.ARRAY_BUFFER, e.quad);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-    [e.color, e.depth].forEach(function (t) {
-      gl.bindTexture(gl.TEXTURE_2D, t);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    });
+    gl.bindTexture(gl.TEXTURE_2D, e.color);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     edl = e;
   })();
   function edlTarget(w, h) {
@@ -365,11 +360,11 @@
       edl.w = w; edl.h = h;
       gl.bindTexture(gl.TEXTURE_2D, edl.color);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-      gl.bindTexture(gl.TEXTURE_2D, edl.depth);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, w, h, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, null);
+      gl.bindRenderbuffer(gl.RENDERBUFFER, edl.depth);
+      gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, w, h);
       gl.bindFramebuffer(gl.FRAMEBUFFER, edl.fbo);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, edl.color, 0);
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, edl.depth, 0);
+      gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, edl.depth);
       if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) { gl.bindFramebuffer(gl.FRAMEBUFFER, null); edl = null; return false; }
     }
     gl.bindFramebuffer(gl.FRAMEBUFFER, edl.fbo);
@@ -380,18 +375,15 @@
     gl.viewport(0, 0, w, h);
     gl.disable(gl.DEPTH_TEST);
     gl.useProgram(edl.prog);
-    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, edl.color);
-    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, edl.depth);
-    gl.uniform1i(edl.U.uColor, 0); gl.uniform1i(edl.U.uDepth, 1);
-    gl.uniform2f(edl.U.uPx, 1 / w, 1 / h);
-    gl.uniform1f(edl.U.uRadius, EDL_RADIUS * renderScale);
-    gl.uniform1f(edl.U.uStrength, EDL_STRENGTH);
-    gl.uniform1f(edl.U.uN, NEAR); gl.uniform1f(edl.U.uF, FAR);
+    gl.bindTexture(gl.TEXTURE_2D, edl.color);
+    gl.uniform1i(edl.U.uColor, 0);
+    var r = EDL_RADIUS * renderScale;
+    gl.uniform2f(edl.U.uPx, r / w, r / h);
+    gl.uniform1f(edl.U.uK, 300 / 4 * EDL_STRENGTH);
     gl.disableVertexAttribArray(1);
     gl.bindBuffer(gl.ARRAY_BUFFER, edl.quad);
     gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-    gl.activeTexture(gl.TEXTURE0);
     gl.enable(gl.DEPTH_TEST);
     gl.useProgram(prog);
     bindCloud();
@@ -517,8 +509,8 @@
     }
     resize();
     var bg = cloud.bg, W2 = canvas.width, H2 = canvas.height;
-    var useEdl = !!(edl && cloud.real && edlTarget(W2, H2));
-    gl.clearColor(bg[0], bg[1], bg[2], 1);
+    var useEdl = !!(edl && cloud.real && EDL_STRENGTH > 0 && edlTarget(W2, H2));
+    gl.clearColor(bg[0], bg[1], bg[2], useEdl ? 0 : 1); // alpha 0 marks sky for the depth pass
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     if (cloud.real) { gl.uniform1f(U.uCamZ, 0); gl.uniform1f(U.uL, 100000); } else { gl.uniform1f(U.uCamZ, camZ); gl.uniform1f(U.uL, L); }
     if (cloud.real) {
