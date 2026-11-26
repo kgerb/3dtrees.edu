@@ -218,7 +218,7 @@
           }
           col[j] = Math.min(1, c[0] * k); col[j + 1] = Math.min(1, c[1] * k); col[j + 2] = Math.min(1, c[2] * k);
         }
-        return { pos: pos, col: col, count: n, bg: B.bg, real: true, size: meta.size, dataset: meta.dataset, license: meta.license };
+        return { pos: pos, col: col, count: n, bg: B.bg, real: true, size: meta.size, dataset: meta.dataset, license: meta.license, credit: meta.credit };
       });
     });
   }
@@ -226,7 +226,7 @@
   // ---------------------------------------------------------------- GL setup
   var VS = [
     'attribute vec3 aPos; attribute vec3 aCol;',
-    'uniform mat4 uView; uniform mat4 uProj; uniform float uCamZ; uniform float uL; uniform float uFocal; uniform float uSize;',
+    'uniform mat4 uView; uniform mat4 uProj; uniform float uCamZ; uniform float uL; uniform float uFocal; uniform float uSize; uniform float uMaxPx; uniform float uNear;',
     'varying vec3 vCol; varying float vDepth;',
     'void main(){',
     '  vec3 p = aPos;',
@@ -234,7 +234,8 @@
     '  vec4 v = uView * vec4(p, 1.0);',
     '  gl_Position = uProj * v;',
     '  float d = max(0.1, -v.z);',
-    '  gl_PointSize = clamp(uSize * uFocal / d, 1.5, 10.0);',
+    '  gl_PointSize = clamp(uSize * uFocal / d, 1.5, uMaxPx);',
+    '  if (d < uNear) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);', // hide leaves brushing the camera
     '  vCol = aCol; vDepth = d;',
     '}'
   ].join('\n');
@@ -257,7 +258,7 @@
   if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { hero.classList.add('no-webgl'); return; }
   gl.useProgram(prog);
   var U = {};
-  ['uView', 'uProj', 'uCamZ', 'uL', 'uFocal', 'uSize', 'uBg', 'uFogFar'].forEach(function (k) { U[k] = gl.getUniformLocation(prog, k); });
+  ['uView', 'uProj', 'uCamZ', 'uL', 'uFocal', 'uSize', 'uMaxPx', 'uNear', 'uBg', 'uFogFar'].forEach(function (k) { U[k] = gl.getUniformLocation(prog, k); });
   var aPos = gl.getAttribLocation(prog, 'aPos'), aCol = gl.getAttribLocation(prog, 'aCol');
   var bufPos = gl.createBuffer(), bufCol = gl.createBuffer();
   gl.enable(gl.DEPTH_TEST);
@@ -346,7 +347,8 @@
     gl.clearColor(bg[0], bg[1], bg[2], 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     if (cloud.real) { gl.uniform1f(U.uCamZ, 0); gl.uniform1f(U.uL, 100000); } else { gl.uniform1f(U.uCamZ, camZ); gl.uniform1f(U.uL, L); }
-    gl.uniform1f(U.uSize, small ? 0.11 : 0.13);
+    if (cloud.real) { gl.uniform1f(U.uSize, small ? 0.08 : 0.07); gl.uniform1f(U.uMaxPx, small ? 4.0 : 5.0); gl.uniform1f(U.uNear, 2.2); }
+    else { gl.uniform1f(U.uSize, small ? 0.11 : 0.13); gl.uniform1f(U.uMaxPx, 10.0); gl.uniform1f(U.uNear, 0.0); }
     gl.uniform3fv(U.uBg, bg); gl.uniform1f(U.uFogFar, fogFar);
     var W2 = canvas.width, H2 = canvas.height;
     if (stereo) { drawEye(0, W2 / 2, H2, -0.032); drawEye(W2 / 2, W2 / 2, H2, 0.032); }
@@ -373,6 +375,7 @@
         if (el.tagName === 'A') el.href = 'https://3dtrees.earth/datasets/' + id; else el.textContent = id;
       });
       document.querySelectorAll('[data-hero-license]').forEach(function (el) { el.textContent = c.license || 'CC BY 4.0'; });
+      document.querySelectorAll('[data-hero-credit]').forEach(function (el) { el.textContent = c.credit || ''; });
       hero.classList.add('ready');
       start();
     });

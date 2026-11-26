@@ -59,6 +59,7 @@ def main():
     ap.add_argument("--center", type=float, nargs=2)
     ap.add_argument("--dataset", help="3Dtrees.earth dataset id shown in the caption")
     ap.add_argument("--license", default="CC BY 4.0", help="licence shown in the caption")
+    ap.add_argument("--credit", help="authors and year shown in the caption, e.g. 'Frey & Schindler (2021)'")
     ap.add_argument("--out", default=os.path.join(os.path.dirname(__file__), "..", "assets", "hero"))
     a = ap.parse_args()
 
@@ -101,6 +102,8 @@ def main():
     meta["license"] = a.license
     if a.dataset:
         meta["dataset"] = str(a.dataset)
+    if a.credit:
+        meta["credit"] = a.credit
     with open(os.path.join(a.out, a.key + ".json"), "w") as f:
         json.dump(meta, f, indent=1)
     print(a.key, meta)
