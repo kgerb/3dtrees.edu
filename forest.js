@@ -7,7 +7,8 @@
   var canvas = document.getElementById('forest-canvas');
   if (!hero || !canvas) return;
 
-  var gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'high-performance' });
+  var GL_OPTS = { antialias: false, alpha: false, powerPreference: 'high-performance' };
+  var gl = canvas.getContext('webgl2', GL_OPTS) || canvas.getContext('webgl', GL_OPTS); // WebGL2 lets the depth pass drop its depth buffer early
   if (!gl) { hero.classList.add('no-webgl'); return; }
 
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -371,7 +372,9 @@
     return true;
   }
   function edlResolve(w, h) {
+    if (gl.invalidateFramebuffer) gl.invalidateFramebuffer(gl.FRAMEBUFFER, [gl.DEPTH_ATTACHMENT]);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.viewport(0, 0, w, h);
     gl.disable(gl.DEPTH_TEST);
     gl.useProgram(edl.prog);
@@ -443,33 +446,49 @@
   }
 
   // ---------------------------------------------------------------- adaptive quality
-  // Frame time decides how sharp the picture is and how many points are drawn. The points are stored in
-  // random order, so drawing the first part of the buffer is an even thinning of the whole scan.
-  // ?q=0.5 in the URL fixes the quality for testing.
+  // Goal: every frame on time. When frames start to miss the display's refresh, fewer points are drawn;
+  // the points are stored in random order, so drawing the first part of the buffer thins the whole scan
+  // evenly, and each point grows a little to keep the crowns closed. Changing the point count costs
+  // nothing, unlike resizing the canvas, so resolution is lowered only as a last resort and never raised
+  // again mid-walk (each resize reallocates buffers and stalls a frame).
+  // ?q=0.5 fixes the share of points for testing; ?fps=1 shows frame rate, points and resolution.
   var Q_FIXED = (function () { var m = /[?&]q=([\d.]+)/.exec(location.search); return m ? Math.max(0.2, Math.min(1, +m[1])) : 0; })();
-  var quality = Q_FIXED || (small ? 0.8 : 1), frameMs = 16.7, slowFor = 0, fastFor = 0, settle = 0, ceiling = 1, ceilingAge = 0;
-  var renderScale = 1;
-  function maxDpr() { return Math.min(window.devicePixelRatio || 1, small ? 1.25 : 1.5); }
-  function adapt(rawMs, dt) {
-    if (Q_FIXED) return;
-    if (settle > 0) { settle -= dt; return; } // after a switch or a hidden tab, the first frames are not representative
-    frameMs += (Math.min(rawMs, 200) - frameMs) * 0.1;
-    ceilingAge += dt; if (ceilingAge > 30) ceiling = 1;
-    if (frameMs > 22) { slowFor += dt; fastFor = 0; } else if (frameMs < 18) { fastFor += dt; slowFor = 0; } else { slowFor = 0; fastFor = 0; }
-    if (slowFor > 0.5 && quality > 0.25) {
-      ceiling = quality; ceilingAge = 0;
-      quality = Math.max(0.25, quality * (frameMs > 40 ? 0.7 : 0.85)); slowFor = 0; settle = 0.4;
-    } else if (fastFor > 3 && quality < Math.min(1, ceiling - 0.05)) {
-      quality = Math.min(1, ceiling - 0.05, quality + 0.1); fastFor = 0; settle = 0.4;
+  var pts = Q_FIXED || 1, resLevel = 1, renderScale = 1;
+  var vsync = 16.7, seen = 0, late = 0, calm = 0, settle = 0, ceiling = 1, ceilingAge = 0;
+  function maxDpr() { return Math.min(window.devicePixelRatio || 1, small || EDL_STRENGTH > 0 ? 1.25 : 1.5); }
+  function adapt(rawMs, sec) {
+    if (Q_FIXED || !cloud || !cloud.real) return;
+    if (settle > 0) { settle -= sec; return; } // after a switch or a hidden tab, the first frames are not representative
+    // refresh interval of the display: follows fast frames quickly, slow ones hardly at all (60 to 144 Hz)
+    vsync += (rawMs - vsync) * (rawMs < vsync ? 0.3 : 0.002);
+    vsync = Math.max(6.9, Math.min(17.5, vsync));
+    seen++; if (rawMs > vsync * 1.6) late++;
+    ceilingAge += sec; if (ceilingAge > 20) { ceiling = Math.min(1, ceiling + 0.1); ceilingAge = 10; }
+    if (seen < 30) return;
+    if (late >= 3) { // more than one frame in ten missed the refresh
+      ceiling = pts; ceilingAge = 0; calm = 0; settle = 0.25;
+      if (pts > 0.3) pts = Math.max(0.3, pts * (late > 12 ? 0.7 : 0.85));
+      else if (resLevel > 0.7) resLevel = Math.max(0.7, resLevel - 0.15);
+    } else if (late === 0) {
+      calm += seen * vsync / 1000;
+      if (calm > 3 && pts < ceiling - 0.04) { pts = Math.min(1, ceiling - 0.04, pts + 0.05); calm = 0; }
     }
+    seen = 0; late = 0;
   }
   function resize() {
-    var dpr = Math.max(Math.min(0.75, maxDpr()), maxDpr() * (0.5 + 0.5 * quality));
+    var dpr = Math.max(0.75, maxDpr() * resLevel);
     var w = Math.round(canvas.clientWidth * dpr), h = Math.round(canvas.clientHeight * dpr);
-    if (Math.abs(canvas.width - w) > 1 || Math.abs(canvas.height - h) > 1) { canvas.width = w; canvas.height = h; }
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
     renderScale = canvas.width / Math.max(1, canvas.clientWidth);
   }
-  function drawCount() { return cloud.real ? Math.round(cloud.count * Math.min(1, 0.35 + 0.65 * quality)) : cloud.count; }
+  function drawCount() { return cloud.real ? Math.round(cloud.count * pts) : cloud.count; }
+  var fpsBox = /[?&]fps=1/.test(location.search) ? document.createElement('div') : null, fpsN = 0, fpsT = 0;
+  if (fpsBox) { fpsBox.style.cssText = 'position:fixed;left:8px;top:64px;z-index:99;font:12px/1.3 monospace;color:#fff;background:rgba(0,0,0,.6);padding:4px 6px;border-radius:4px;pointer-events:none'; document.body.appendChild(fpsBox); }
+  function fpsTick(t) {
+    fpsN++; if (t - fpsT < 500) return;
+    fpsBox.textContent = Math.round(fpsN * 1000 / (t - fpsT)) + ' fps · ' + Math.round(pts * 100) + '% points · ' + canvas.width + '×' + canvas.height + (edl && EDL_STRENGTH > 0 ? ' · depth on' : ' · depth off');
+    fpsN = 0; fpsT = t;
+  }
 
   function drawEye(x0, w, h, eyeOffset) {
     gl.viewport(x0, 0, w, h);
@@ -497,6 +516,7 @@
     if (!running || !cloud) { running = false; return; }
     var rawMs = t - last, dt = Math.min(0.05, rawMs / 1000 || 0); last = t;
     adapt(rawMs, Math.min(0.25, rawMs / 1000 || 0)); // real time, so a slow device is noticed quickly
+    if (fpsBox) fpsTick(t);
     camZ += speed * dt;
     fogFar += (fogTarget - fogFar) * Math.min(1, dt * 1.6);
     if (orient) {
