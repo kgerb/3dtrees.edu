@@ -7,7 +7,7 @@
 <meta name="description" content="ForestVerse: Jeder Wald, nur ein Klick entfernt. Satellitendaten, KI und echte 3D-Laserscans machen die Wälder der Welt per Cardboard-Brille erfahrbar.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2032%2032%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%2214.2%22%20fill%3D%22none%22%20stroke%3D%22%232f6b47%22%20stroke-width%3D%221.6%22%20opacity%3D%22.45%22/%3E%3Cpath%20d%3D%22M3.5%2019.5c5%202.2%2020%202.2%2025%200%22%20fill%3D%22none%22%20stroke%3D%22%232f6b47%22%20stroke-width%3D%221.2%22%20opacity%3D%22.35%22/%3E%3Cg%20fill%3D%22%232f6b47%22%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%226.6%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2216.0%22%20cy%3D%229%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2214.85%22%20cy%3D%2211.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2217.15%22%20cy%3D%2211.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2213.7%22%20cy%3D%2214%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2216.0%22%20cy%3D%2214%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2218.3%22%20cy%3D%2214%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2212.55%22%20cy%3D%2216.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2214.85%22%20cy%3D%2216.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2217.15%22%20cy%3D%2216.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2219.45%22%20cy%3D%2216.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2211.4%22%20cy%3D%2219%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2213.7%22%20cy%3D%2219%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2216.0%22%20cy%3D%2219%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2218.3%22%20cy%3D%2219%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2220.6%22%20cy%3D%2219%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2210.25%22%20cy%3D%2221.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2212.55%22%20cy%3D%2221.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2214.85%22%20cy%3D%2221.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2217.15%22%20cy%3D%2221.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2219.45%22%20cy%3D%2221.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2221.75%22%20cy%3D%2221.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2224%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2226.2%22%20r%3D%221.05%22/%3E%3C/g%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=20261126-21">
+<link rel="stylesheet" href="style.css?v=20261126-22">
 <script>
   // Pick the language before first paint: ?lang= > saved choice > browser language > German.
   (function () {
@@ -69,7 +69,7 @@
       </div>
       <div class="hero-foot">
         <div class="hero-meta">
-          <p class="hero-soon"><span class="soon-tag">Coming soon</span><span lang="de">Mehr Informationen zum Projekt folgen in Kürze.</span><span lang="en">More information about the project is coming soon.</span></p>
+          <p class="hero-soon"><span lang="de">Mehr Informationen zum Projekt gibt <span class="nowrap">es <span class="soon-tag">in Kürze</span></span></span><span lang="en">More information about the project <span class="nowrap">is <span class="soon-tag">coming soon</span></span></span></p>
         </div>
         <button type="button" class="scan-info" aria-expanded="false" aria-controls="scan-note"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 10.5v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="7.6" r="1.1" fill="currentColor"/></svg><span class="sr-only"><span lang="de">Info zum Scan</span><span lang="en">About this scan</span></span></button>
         <p class="immersive-note" id="scan-note">
@@ -97,38 +97,36 @@
       <article class="post reveal" id="post-2026-11-25">
         <p class="post-meta"><time datetime="2026-11-25"><span lang="de">25. November 2026</span><span lang="en">25 November 2026</span></time> · Kilian Gerberding &amp; Marina Meyer</p>
         <h2><span lang="de">Bewerbung eingereicht: Hallo, ForestVerse!</span><span lang="en">Application submitted: hello, ForestVerse!</span></h2>
-        <p class="post-lead" lang="de">Heute haben wir ForestVerse beim <a href="https://www.hochschulwettbewerb.net/2027/">Hochschulwettbewerb 2027</a> eingereicht. Zeit, uns und unsere Idee kurz vorzustellen.</p>
-        <p class="post-lead" lang="en">Today we submitted ForestVerse to the <a href="https://www.hochschulwettbewerb.net/2027/">Hochschulwettbewerb 2027</a>. Time to briefly introduce ourselves and our idea.</p>
+        <p class="post-lead" lang="de">Heute haben wir ForestVerse beim <a href="https://www.hochschulwettbewerb.net/2027/">Hochschulwettbewerb 2027</a> eingereicht. Ein guter Moment, um euch zu erzählen, warum uns dieses Projekt so am Herzen liegt.</p>
+        <p class="post-lead" lang="en">Today we submitted ForestVerse to the <a href="https://www.hochschulwettbewerb.net/2027/">Hochschulwettbewerb 2027</a>. A good moment to tell you why this project means so much to us.</p>
+
+        <h3><span lang="de">Warum wir das machen</span><span lang="en">Why we are doing this</span></h3>
+        <p lang="de">„Wir schützen nur, was wir lieben!“ Wie wahr. Doch wie soll man einen Wald lieben, den man nie gesehen hat? Viele der faszinierendsten Wälder der Erde wird kaum jemand je betreten können: den Regenwald in Kamerun, die Regenwälder Borneos, die Wälder Australiens.</p>
+        <p lang="en">“We only protect what we love!” True that. But how do you love a forest you have never seen? Hardly anyone will ever set foot in many of the most fascinating forests on Earth: the rainforest in Cameroon, the rainforests of Borneo, the forests of Australia.</p>
+        <p lang="de">Wir haben das Glück, mit genau diesen Wäldern zu arbeiten, als 3D-Laserscans auf 3Dtrees.earth, Baum für Baum und Ast für Ast. Wenn man zum ersten Mal virtuell durch so einen Scan läuft, vergisst man kurz, dass man vor einem Bildschirm sitzt. Dieses Gefühl wollen wir teilen.</p>
+        <p lang="en">We are lucky enough to work with exactly these forests, as 3D laser scans on 3Dtrees.earth, tree by tree and branch by branch. The first time you walk through such a scan, you briefly forget you are sitting in front of a screen. That feeling is what we want to share.</p>
 
         <h3><span lang="de">Unsere Idee</span><span lang="en">Our idea</span></h3>
-        <p lang="de">„Wir schützen nur, was wir lieben!“ Wie wahr. Doch viele der faszinierendsten Wälder der Erde wird kaum jemand je betreten können. Wir wollen Satellitendaten mit der weltweit größten Sammlung an 3D-Laserscans von Wäldern auf 3Dtrees.earth verbinden und daraus ein Modell trainieren, das die Struktur aller Wälder der Welt simulieren kann. Ein Klick auf die Weltkarte, und man erlebt den Wald in Virtual Reality, mit nur einem Smartphone und einer einfachen Cardboard-Brille.</p>
-        <p lang="en">“We only protect what we love!” True that. Yet hardly anyone will ever set foot in many of the most fascinating forests on Earth. We want to combine satellite data with the world’s largest collection of 3D laser scans of forests on 3Dtrees.earth and train a model that can simulate the structure of every forest in the world. One click on the world map, and you experience the forest in virtual reality, with nothing but a smartphone and a simple cardboard headset.</p>
+        <p lang="de">Wir wollen Satellitendaten mit der weltweit größten Sammlung an 3D-Laserscans von Wäldern verbinden und daraus ein Modell trainieren, das die Struktur aller Wälder der Welt simulieren kann. Ein Klick auf die Weltkarte, und man steht mitten im Wald, in Virtual Reality, mit nur einem Smartphone und einer einfachen Cardboard-Brille.</p>
+        <p lang="en">We want to combine satellite data with the world’s largest collection of 3D laser scans of forests and train a model that can simulate the structure of every forest in the world. One click on the world map, and you are standing in the middle of the forest, in virtual reality, with nothing but a smartphone and a simple cardboard headset.</p>
 
-        <h3><span lang="de">Wer wir sind</span><span lang="en">Who we are</span></h3>
-        <div class="post-people">
+        <h3><span lang="de">Wir zwei</span><span lang="en">The two of us</span></h3>
+        <p lang="de">ForestVerse lebt von zwei Blickwinkeln. Kilian bringt die Daten mit: Er steckt tief in den Laserscans und baut die virtuellen Wälder. Marina bringt die Frage mit, auf die es am Ende ankommt: Wie springt der Funke über, bei Jugendlichen in Schulen, Universitäten und Freiwilligendiensten? Wer wir sonst noch sind, steht unter, ihr ahnt es schon, <a href="#about">Über uns</a>.</p>
+        <p lang="en">ForestVerse lives on two perspectives. Kilian brings the data: he is deep into the laser scans and builds the virtual forests. Marina brings the question that matters in the end: how does the spark jump over to young people in schools, universities and voluntary services? Who else we are is under – you guessed it – <a href="#about">About us</a>.</p>
+        <div class="post-people row">
           <div class="post-person">
             <div class="avatar small"><img src="assets/people/kilian.jpg" alt="Kilian Gerberding" loading="lazy" referrerpolicy="no-referrer"><span aria-hidden="true">KG</span></div>
-            <div>
-              <h4>Kilian Gerberding</h4>
-              <p lang="de">Er promoviert an der Universität Freiburg zu 3D-Laserscanning von Wäldern und entwickelt die offene Forschungsplattform 3Dtrees.earth mit, auf der Forschende weltweit ihre Waldscans analysieren und teilen. In ForestVerse kümmert er sich um die Daten, das Modell und die VR-Wälder.</p>
-              <p lang="en">He is doing his PhD on 3D laser scanning of forests at the University of Freiburg and co-develops the open research platform 3Dtrees.earth, where researchers worldwide analyze and share their forest scans. In ForestVerse he takes care of the data, the model and the VR forests.</p>
-            </div>
+            <div><h4>Kilian</h4></div>
           </div>
           <div class="post-person">
             <div class="avatar small"><img src="assets/people/marina.jpg" alt="Marina Meyer" loading="lazy"><span aria-hidden="true">MM</span></div>
-            <div>
-              <h4>Marina Meyer</h4>
-              <p lang="de">Marina hat im Bachelor Biologie auf Lehramt studiert und ist jetzt im Master Bildungswissenschaften. So bringt sie die Bildungsperspektive ein. Sie wird gestalten, wie Jugendliche in Schulen, Universitäten und Freiwilligendiensten die Wälder der Welt kennenlernen, den Weg der Daten nachvollziehen und mit der VR-Brille selbst eintauchen.</p>
-              <p lang="en">Marina studied biology for a teaching degree (bachelor’s) and is now doing her master’s in educational science. She brings the education perspective. She will shape how young people in schools, universities and voluntary services get to know the world’s forests, follow the path of the data and dive in themselves with the VR headset.</p>
-            </div>
+            <div><h4>Marina</h4></div>
           </div>
         </div>
-        <p lang="de">Betreut wird das Projekt von Prof. Dr. Teja Kattenborn. Mehr über uns steht unter, ihr ahnt es schon, <a href="#about">Über uns</a>.</p>
-        <p lang="en">The project is supervised by Prof. Dr. Teja Kattenborn. More about us under – you guessed it – <a href="#about">About us</a>.</p>
 
         <h3><span lang="de">Wie es weitergeht</span><span lang="en">What happens next</span></h3>
-        <p lang="de">Jetzt ist die Jury am Zug. Wir freuen uns darauf, von ihr zu hören, und berichten hier, sobald es Neuigkeiten gibt.</p>
-        <p lang="en">Now it is the jury’s turn. We are looking forward to hearing from them and will post here as soon as there is news.</p>
+        <p lang="de">Jetzt ist die Jury am Zug, und wir sind ehrlich gesagt ziemlich gespannt. Bis wir mehr wissen, könnt ihr auf der <a href="#project">Startseite</a> schon durch sechs echte Wälder spazieren. Schaut gern immer mal wieder hier vorbei: Wir berichten, sobald es Neuigkeiten gibt.</p>
+        <p lang="en">Now it is the jury’s turn, and honestly, we are pretty excited. Until we know more, you can already walk through six real forests on the <a href="#project">home page</a>. Feel free to drop by now and then: we will post as soon as there is news.</p>
       </article>
     </div>
 
@@ -199,9 +197,9 @@
 
 <!-- Visitor counts: GoatCounter, no cookies, no personal data. Each tab is counted as its own page (see site.js). -->
 <script id="goatcounter" data-goatcounter="https://kgerb.goatcounter.com/count" data-goatcounter-settings='{"no_onload": true}' async src="https://gc.zgo.at/count.js"></script>
-<script src="analytics.js?v=20261126-21"></script>
-<script src="site.js?v=20261126-21"></script>
-<script src="forest.js?v=20261126-21"></script>
-<script src="post-edit.js?v=20261126-21"></script>
+<script src="analytics.js?v=20261126-22"></script>
+<script src="site.js?v=20261126-22"></script>
+<script src="forest.js?v=20261126-22"></script>
+<script src="post-edit.js?v=20261126-22"></script>
 </body>
 </html>
