@@ -482,8 +482,10 @@
   function bindCloud() {
     var b = BUF[front], real = cloud && cloud.real;
     gl.bindBuffer(gl.ARRAY_BUFFER, b.pos); gl.enableVertexAttribArray(aPos);
-    if (real) gl.vertexAttribPointer(aPos, 3, gl.UNSIGNED_SHORT, false, 8, 0); else gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
-    gl.bindBuffer(gl.ARRAY_BUFFER, b.col); gl.enableVertexAttribArray(aCol); gl.vertexAttribPointer(aCol, 3, gl.UNSIGNED_BYTE, true, 4, 0);
+    // 4 normalised components: the formats GPUs read natively (with 3, or unnormalised, ANGLE on Windows
+    // converts the whole buffer on the CPU first, a ~200 ms stall)
+    if (real) gl.vertexAttribPointer(aPos, 4, gl.UNSIGNED_SHORT, true, 8, 0); else gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, b.col); gl.enableVertexAttribArray(aCol); gl.vertexAttribPointer(aCol, 4, gl.UNSIGNED_BYTE, true, 4, 0);
   }
 
   // ---------------------------------------------------------------- math
@@ -631,7 +633,7 @@
     gl.clearColor(bg[0], bg[1], bg[2], useEdl ? 0 : 1); // alpha 0 marks sky for the depth pass
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     if (pending) stepUpload();
-    if (cloud.real) { gl.uniform1f(U.uCamZ, 0); gl.uniform1f(U.uL, 100000); gl.uniform1f(U.uPosScale, 0.01); gl.uniform3f(U.uPosOff, -cloud.half, 0, -cloud.half); }
+    if (cloud.real) { gl.uniform1f(U.uCamZ, 0); gl.uniform1f(U.uL, 100000); gl.uniform1f(U.uPosScale, 655.35); gl.uniform3f(U.uPosOff, -cloud.half, 0, -cloud.half); } // positions: normalised uint16 cm -> m
     else { gl.uniform1f(U.uCamZ, camZ); gl.uniform1f(U.uL, L); gl.uniform1f(U.uPosScale, 1); gl.uniform3f(U.uPosOff, 0, 0, 0); }
     if (cloud.real) {
       var thin = Math.min(2, Math.sqrt(cloud.full / drawCount())); // fewer points drawn: make each a little larger so the crowns stay closed
@@ -764,9 +766,9 @@
   (function warmUp() {
     var p = gl.createBuffer(), c = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, p); gl.bufferData(gl.ARRAY_BUFFER, new Uint16Array(4), gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos, 3, gl.UNSIGNED_SHORT, false, 8, 0);
+    gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos, 4, gl.UNSIGNED_SHORT, true, 8, 0);
     gl.bindBuffer(gl.ARRAY_BUFFER, c); gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(4), gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(aCol); gl.vertexAttribPointer(aCol, 3, gl.UNSIGNED_BYTE, true, 4, 0);
+    gl.enableVertexAttribArray(aCol); gl.vertexAttribPointer(aCol, 4, gl.UNSIGNED_BYTE, true, 4, 0);
     resize();
     var w = canvas.width, h = canvas.height, useEdl = !!(edl && EDL_STRENGTH > 0 && edlTarget(w, h));
     gl.viewport(0, 0, w, h); gl.clearColor(BG[0], BG[1], BG[2], useEdl ? 0 : 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
