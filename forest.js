@@ -391,8 +391,8 @@
     gl.useProgram(prog);
     bindCloud();
   }
-  // Off by default until it runs as smoothly as without. ?edl=on turns it on, ?edl=0.05,2 sets strength and radius for testing.
-  var EDL_RADIUS = 1.4, EDL_STRENGTH = 0;
+  // On by default. ?edl=0 turns it off, ?edl=0.05,2 sets strength and radius for testing.
+  var EDL_RADIUS = 1.4, EDL_STRENGTH = 0.025;
   (function () {
     if (/[?&]edl=on\b/.test(location.search)) { EDL_STRENGTH = 0.025; return; }
     var q = /[?&]edl=([\d.]+)(?:,([\d.]+))?/.exec(location.search); if (q) { EDL_STRENGTH = +q[1]; if (q[2]) EDL_RADIUS = +q[2]; }
