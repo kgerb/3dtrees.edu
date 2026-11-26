@@ -310,6 +310,7 @@
   var prog = gl.createProgram();
   gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS));
   gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS));
+  gl.bindAttribLocation(prog, 0, 'aPos'); gl.bindAttribLocation(prog, 1, 'aCol');
   gl.linkProgram(prog);
   if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { hero.classList.add('no-webgl'); return; }
   gl.useProgram(prog);
@@ -319,16 +320,103 @@
   var bufPos = gl.createBuffer(), bufCol = gl.createBuffer();
   gl.enable(gl.DEPTH_TEST);
 
+  // ---------------------------------------------------------------- eye-dome lighting
+  // Depth cue for real scans: points are rendered into a texture, then each pixel is darkened by how much
+  // its neighbours sit in front of it (in log depth). Edges of stems and crowns get a dark rim, so you can
+  // see which branch is in front. Needs WEBGL_depth_texture; without it the scene is drawn as before.
+  var EDL_FS = [
+    'precision highp float;',
+    'uniform sampler2D uColor; uniform sampler2D uDepth;',
+    'uniform vec2 uPx; uniform float uRadius; uniform float uStrength; uniform float uN; uniform float uF;',
+    'varying vec2 vUv;',
+    'float ld(vec2 uv){ float z = texture2D(uDepth, uv).r; if (z >= 1.0) return 0.0;',
+    '  float lin = 2.0 * uN * uF / (uF + uN - (z * 2.0 - 1.0) * (uF - uN)); return log2(lin); }',
+    'void main(){',
+    '  float d = ld(vUv), sum = 0.0;',
+    '  for (int i = 0; i < 8; i++) {',
+    '    float a = float(i) * 0.7853982;',
+    '    float dn = ld(vUv + vec2(cos(a), sin(a)) * uPx * uRadius);',
+    '    if (dn != 0.0) sum += (d == 0.0) ? 100.0 : min(1.0, max(0.0, d - dn));', // capped: a twig 10 m in front shades no harder than one 2x closer
+    '  }',
+    '  float shade = d == 0.0 ? exp(-sum / 8.0 * 300.0 * uStrength) : mix(0.3, 1.0, exp(-sum / 8.0 * 300.0 * uStrength));',
+    '  vec4 c = texture2D(uColor, vUv);',
+    '  gl_FragColor = vec4(c.rgb * shade, 1.0);',
+    '}'
+  ].join('\n');
+  var EDL_VS = 'attribute vec2 aXY; varying vec2 vUv; void main(){ vUv = aXY * 0.5 + 0.5; gl_Position = vec4(aXY, 0.0, 1.0); }';
+  var edl = null;
+  (function () {
+    if (!gl.getExtension('WEBGL_depth_texture')) return;
+    var p = gl.createProgram();
+    gl.attachShader(p, sh(gl.VERTEX_SHADER, EDL_VS));
+    gl.attachShader(p, sh(gl.FRAGMENT_SHADER, EDL_FS));
+    gl.bindAttribLocation(p, 0, 'aXY');
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) return;
+    var e = { prog: p, U: {}, quad: gl.createBuffer(), fbo: gl.createFramebuffer(), color: gl.createTexture(), depth: gl.createTexture(), w: 0, h: 0 };
+    ['uColor', 'uDepth', 'uPx', 'uRadius', 'uStrength', 'uN', 'uF'].forEach(function (k) { e.U[k] = gl.getUniformLocation(p, k); });
+    gl.bindBuffer(gl.ARRAY_BUFFER, e.quad);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    [e.color, e.depth].forEach(function (t) {
+      gl.bindTexture(gl.TEXTURE_2D, t);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    });
+    edl = e;
+  })();
+  function edlTarget(w, h) {
+    if (edl.w !== w || edl.h !== h) {
+      edl.w = w; edl.h = h;
+      gl.bindTexture(gl.TEXTURE_2D, edl.color);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      gl.bindTexture(gl.TEXTURE_2D, edl.depth);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, w, h, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, null);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, edl.fbo);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, edl.color, 0);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, edl.depth, 0);
+      if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) { gl.bindFramebuffer(gl.FRAMEBUFFER, null); edl = null; return false; }
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, edl.fbo);
+    return true;
+  }
+  function edlResolve(w, h) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, w, h);
+    gl.disable(gl.DEPTH_TEST);
+    gl.useProgram(edl.prog);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, edl.color);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, edl.depth);
+    gl.uniform1i(edl.U.uColor, 0); gl.uniform1i(edl.U.uDepth, 1);
+    gl.uniform2f(edl.U.uPx, 1 / w, 1 / h);
+    gl.uniform1f(edl.U.uRadius, EDL_RADIUS * Math.min(window.devicePixelRatio || 1, small ? 1.5 : 2));
+    gl.uniform1f(edl.U.uStrength, EDL_STRENGTH);
+    gl.uniform1f(edl.U.uN, NEAR); gl.uniform1f(edl.U.uF, FAR);
+    gl.disableVertexAttribArray(1);
+    gl.bindBuffer(gl.ARRAY_BUFFER, edl.quad);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.enable(gl.DEPTH_TEST);
+    gl.useProgram(prog);
+    bindCloud();
+  }
+  var EDL_RADIUS = 1.4, EDL_STRENGTH = 0.025; // ?edl=0 in the URL turns it off, ?edl=0.05,2 sets strength and radius for testing
+  (function () { var q = /[?&]edl=([\d.]+)(?:,([\d.]+))?/.exec(location.search); if (q) { EDL_STRENGTH = +q[1]; if (q[2]) EDL_RADIUS = +q[2]; } })();
+
   var cloud = null;
   function upload(c) {
     cloud = c;
     gl.bindBuffer(gl.ARRAY_BUFFER, bufPos); gl.bufferData(gl.ARRAY_BUFFER, c.pos, gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
     gl.bindBuffer(gl.ARRAY_BUFFER, bufCol); gl.bufferData(gl.ARRAY_BUFFER, c.col, gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(aCol); gl.vertexAttribPointer(aCol, 3, gl.FLOAT, false, 0, 0);
+    bindCloud();
+  }
+  function bindCloud() {
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufPos); gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufCol); gl.enableVertexAttribArray(aCol); gl.vertexAttribPointer(aCol, 3, gl.FLOAT, false, 0, 0);
   }
 
   // ---------------------------------------------------------------- math
+  var NEAR = 0.3, FAR = 400;
   function perspective(fovy, aspect, near, far) {
     var f = 1 / Math.tan(fovy / 2), nf = 1 / (near - far);
     return new Float32Array([f / aspect, 0, 0, 0, 0, f, 0, 0, 0, 0, (far + near) * nf, -1, 0, 0, 2 * far * near * nf, 0]);
@@ -386,7 +474,7 @@
     var aspect = w / h;
     var fov = stereo ? 90 * Math.PI / 180 : (aspect < 0.8 ? 80 * Math.PI / 180 : FOV);
     gl.uniformMatrix4fv(U.uView, false, vv.m);
-    gl.uniformMatrix4fv(U.uProj, false, perspective(fov, aspect, 0.1, 400));
+    gl.uniformMatrix4fv(U.uProj, false, perspective(fov, aspect, NEAR, FAR));
     gl.uniform1f(U.uFocal, (h / 2) / Math.tan(fov / 2));
     gl.drawArrays(gl.POINTS, 0, cloud.count);
   }
@@ -405,16 +493,17 @@
       pitch = Math.max(-0.9, Math.min(1.2, pitch));
     }
     resize();
-    var bg = cloud.bg;
+    var bg = cloud.bg, W2 = canvas.width, H2 = canvas.height;
+    var useEdl = !!(edl && cloud.real && edlTarget(W2, H2));
     gl.clearColor(bg[0], bg[1], bg[2], 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     if (cloud.real) { gl.uniform1f(U.uCamZ, 0); gl.uniform1f(U.uL, 100000); } else { gl.uniform1f(U.uCamZ, camZ); gl.uniform1f(U.uL, L); }
     if (cloud.real) { gl.uniform1f(U.uSize, small ? 0.08 : 0.07); gl.uniform1f(U.uMaxPx, small ? 4.0 : 5.0); gl.uniform1f(U.uNear, 2.2); }
     else { gl.uniform1f(U.uSize, small ? 0.11 : 0.13); gl.uniform1f(U.uMaxPx, 10.0); gl.uniform1f(U.uNear, 0.0); }
     gl.uniform3fv(U.uBg, bg); gl.uniform1f(U.uFogFar, fogFar);
-    var W2 = canvas.width, H2 = canvas.height;
     if (stereo) { drawEye(0, W2 / 2, H2, -0.032); drawEye(W2 / 2, W2 / 2, H2, 0.032); }
     else drawEye(0, W2, H2, 0);
+    if (useEdl) edlResolve(W2, H2);
     if (reduceMotion && !stereo && Math.abs(fogTarget - fogFar) < 0.5 && !dragging) { running = false; return; }
     requestAnimationFrame(frame);
   }
