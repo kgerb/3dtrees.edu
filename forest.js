@@ -535,7 +535,7 @@
   var stereo = false, orient = null, orient0 = null;
   var visible = true, running = false, last = 0;
   var current = 'black-forest', loadToken = 0;
-  var DATASETS = { 'black-forest': '2909', 'boreal': '1069', 'congo': '3140', 'borneo': '1477', 'australia': '1875', 'gabon': '1481' };
+  var DATASETS = { 'black-forest': '97', 'freiburg': '109', 'boreal': '1069', 'congo': '3200', 'borneo': '1477', 'australia': '1875', 'gabon': '1482' };
   // extra scans can borrow a palette: <button data-biome="my-scan" data-palette="congo">
   function biome(name) {
     if (BIOMES[name]) return BIOMES[name];
