@@ -44,10 +44,11 @@
   }
 
   // GoatCounter (index.html): count each tab as its own page, e.g. /3dtrees.edu/#news
-  var counted = null;
+  var counted = null, tracked = null;
   function track(id) {
     var path = location.pathname + (id === 'project' ? '' : '#' + id);
     if (path === counted) return;
+    if (window.fvTrack && path !== tracked) { tracked = path; fvTrack('$pageview', { $current_url: location.origin + path, tab: id, lang: root.lang }); } // PostHog (analytics.js)
     var gc = window.goatcounter;
     if (gc && gc.count) { counted = path; gc.count({ path: path, title: document.title }); return; }
     var tag = document.getElementById('goatcounter');
