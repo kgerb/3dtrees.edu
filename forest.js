@@ -213,7 +213,7 @@
   // assets/hero/<key>.json + .lo.bin (250k points) + .hi.bin (2M), written by tools/make_hero_clouds.py on geos.
   // File layout: uint16 x, y, z in cm (each a block of n), then n uint8 ground flags; points in random order.
   // Each scan appears from the light file first; on desktops the full file follows and replaces it.
-  var ASSET_V = '20261126-3'; // bump when assets/hero files change, so browsers don't keep old ones
+  var ASSET_V = '20261126-4'; // bump when assets/hero files change, so browsers don't keep old ones
 
   // Self-contained (also runs as a Web Worker): turns a file into GPU-ready arrays.
   // pos: uint16 x, height, y, 0 per point (cm); col: rgba bytes. Optionally picks the walking path.
@@ -255,8 +255,7 @@
     var out = { pos: pos, col: col, n: n, lo: lo, hi: hi, tiles: { G: G, size: o.size, off: off, ymax: ymax } };
     if (o.wantPath) {
       // Walking circle and eye height with the least vegetation around the camera, so it walks through open
-      // forest instead of brushing through shrubs. Eye level (1.7 m) is preferred; in dense forests the camera
-      // rises into a sparser layer between the understory and the crowns.
+      // forest instead of brushing through shrubs, always at eye level (1.7 m).
       var size = o.size, gsz = Math.ceil(size), maxH = Math.max(3, Math.min(30, Math.floor(0.5 * hi))), nz = maxH + 3;
       var dens = new Float32Array(gsz * gsz * nz);
       for (i = 0; i < n; i++) {
@@ -265,8 +264,7 @@
         if (hz >= nz) continue;
         dens[(hz * gsz + Math.min(gsz - 1, ys[i] / 100 | 0)) * gsz + Math.min(gsz - 1, xs[i] / 100 | 0)]++;
       }
-      var heights = [1.7];
-      for (var hh = 3; hh <= maxH; hh++) heights.push(hh);
+      var heights = [1.7]; // always walk on the ground at eye level (Kilian, 26 Nov: never float in the air)
       var best = { r: 0.38 * size, h: 1.7 }, bestCost = Infinity, half = size / 2;
       for (var f = 0.12; f <= 0.42; f += 0.02) {
         var rad = f * size;
