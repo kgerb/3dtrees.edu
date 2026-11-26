@@ -458,26 +458,31 @@
   // ?q=0.5 fixes the share of points for testing; ?fps=1 shows frame rate, points and resolution.
   var Q_FIXED = (function () { var m = /[?&]q=([\d.]+)/.exec(location.search); return m ? Math.max(0.2, Math.min(1, +m[1])) : 0; })();
   var pts = Q_FIXED || 1, resLevel = 1, renderScale = 1;
-  var vsync = 16.7, seen = 0, late = 0, calm = 0, settle = 0, ceiling = 1, ceilingAge = 0;
-  function maxDpr() { return Math.min(window.devicePixelRatio || 1, small || EDL_STRENGTH > 0 ? 1.25 : 1.5); }
+  var vsync = 16.7, frameEma = 16.7, winT = 0, seen = 0, late = 0, bad = 0, calm = 0, settle = 0, ceiling = 1, ceilingAge = 0;
+  function maxDpr() { return Math.min(window.devicePixelRatio || 1, small ? 1.25 : 1.5); }
   function adapt(rawMs, sec) {
     if (Q_FIXED || !cloud || !cloud.real) return;
     if (settle > 0) { settle -= sec; return; } // after a switch or a hidden tab, the first frames are not representative
     // refresh interval of the display: follows fast frames quickly, slow ones hardly at all (60 to 144 Hz)
     vsync += (rawMs - vsync) * (rawMs < vsync ? 0.3 : 0.002);
     vsync = Math.max(6.9, Math.min(17.5, vsync));
-    seen++; if (rawMs > vsync * 1.6) late++;
+    // a single long stall (garbage collection, a tab switch) is not a sign of too many points: only count
+    // frames that are steadily a bit too slow
+    frameEma += (Math.min(rawMs, 250) - frameEma) * 0.1;
+    seen++; if (rawMs > vsync * 1.6 && (rawMs < vsync * 3.5 || frameEma > vsync * 2)) late++;
     ceilingAge += sec; if (ceilingAge > 20) { ceiling = Math.min(1, ceiling + 0.1); ceilingAge = 10; }
-    if (seen < 30) return;
-    if (late >= 3) { // more than one frame in ten missed the refresh
-      ceiling = pts; ceilingAge = 0; calm = 0; settle = 0.25;
-      if (pts > 0.3) pts = Math.max(0.3, pts * (late > 12 ? 0.7 : 0.85));
+    winT += sec;
+    if (seen < 30 && (winT < 0.5 || seen < 3)) return; // a window is 30 frames or half a second
+    bad = late * 10 >= seen ? bad + 1 : 0; // more than one frame in ten missed the refresh...
+    if (bad >= 2) { // ...twice in a row (about one second)
+      bad = 0; ceiling = pts; ceilingAge = 0; calm = 0; settle = 0.25;
+      if (pts > 0.3) pts = Math.max(0.3, pts * (late * 2 >= seen ? 0.7 : 0.85));
       else if (resLevel > 0.7) resLevel = Math.max(0.7, resLevel - 0.15);
-    } else if (late === 0) {
+    } else if (late === 0 && !bad) {
       calm += seen * vsync / 1000;
       if (calm > 3 && pts < ceiling - 0.04) { pts = Math.min(1, ceiling - 0.04, pts + 0.05); calm = 0; }
     }
-    seen = 0; late = 0;
+    seen = 0; late = 0; winT = 0;
   }
   function resize() {
     var dpr = Math.max(0.75, maxDpr() * resLevel);
@@ -559,7 +564,7 @@
     var token = ++loadToken;
     loadReal(name).catch(function () { return generate(name); }).then(function (c) {
       if (token !== loadToken) return;
-      upload(c); settle = 0.8;
+      upload(c); settle = 2; // the first frames after a new scan include buffer uploads
       camZ = 0; // every scan starts at its chosen viewpoint
       basePitch = c.real ? c.view.pitch : 0.06; tPitch = basePitch; tYaw = 0; dragYaw = 0; dragPitch = 0;
       fogFar = 2; // forest emerges from the fog
