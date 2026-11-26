@@ -120,9 +120,6 @@ svg .loop{font-size:12px;font-weight:600;fill:var(--forest)}
 @media (max-width:520px){.person{flex-direction:column}.avatar{width:72px;height:72px}}
 
 /* Footer */
-.site-footer{border-top:1px solid var(--line);color:var(--muted);font-size:.9rem}
-.site-footer .wrap{padding-top:24px;padding-bottom:40px;display:flex;flex-direction:column;gap:8px}
-.site-footer .small{font-size:.8rem}
 
 /* ---------- Immersive hero: point-cloud forest ---------- */
 .immersive{position:relative;height:100svh;min-height:560px;max-height:1100px;overflow:hidden;background:#090b12;color:#f2f5f0;isolation:isolate}
@@ -252,7 +249,8 @@ figure.concept figcaption{padding:0 8px 6px}
 .hero-soon{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0;font-size:.82rem;color:rgba(255,255,255,.8)}
 .hero-soon .soon-tag{background:#f7ecd6;color:#1d2a22}
 .immersive.vr .hero-soon{display:none}
-.supported-by{display:inline-flex;align-items:center;gap:7px;color:rgba(255,255,255,.8);font-size:.82rem;text-decoration:none}
+.title-lockup{align-self:flex-start;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.supported-by{display:inline-flex;align-items:center;gap:7px;color:rgba(255,255,255,.8);font-size:.82rem;text-decoration:none;margin-right:.2em}
 .supported-by img{width:24px;height:24px;border-radius:5px}
 .supported-by strong{color:#fff;font-weight:600}
 .supported-by:hover strong{text-decoration:underline}
@@ -269,3 +267,8 @@ figure.concept figcaption{padding:0 8px 6px}
 [data-tab="project"] .lang-switch button[aria-pressed="true"]{background:#fff;color:#0d1a12}
 [data-tab="project"] .immersive-content{padding-top:96px}
 [data-tab="project"] .brand{visibility:hidden}
+
+/* The Projekt tab is only the full-screen viewer: no page scroll, drags go to the forest */
+html[data-tab="project"],html[data-tab="project"] body{height:100%;overflow:hidden;overscroll-behavior:none}
+[data-tab="project"] .immersive{height:100vh;height:100dvh;min-height:0;max-height:none}
+[data-tab="project"] .immersive canvas{touch-action:none}

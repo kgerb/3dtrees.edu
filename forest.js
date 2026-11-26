@@ -93,7 +93,7 @@
 
   // ---------------------------------------------------------------- generation
   function generate(name) {
-    var B = BIOMES[name];
+    var B = biome(name);
     seed = 4242 + name.length * 977;
     var maxPts = Math.round((small ? 90000 : 190000) * B.budget);
     var pos = new Float32Array(maxPts * 3), col = new Float32Array(maxPts * 3);
@@ -203,29 +203,40 @@
   }
 
   // ---------------------------------------------------------------- real scans
-  // Pick the walking circle with the least understory (0.4 to 3.5 m) along it, so the camera
-  // walks through open forest instead of brushing through shrubs.
-  function openPath(xs, ys, zs, flag, n, size) {
-    var g = Math.ceil(size), dens = new Float32Array(g * g);
+  // Pick the walking circle and eye height with the least vegetation around the camera, so it walks
+  // through open forest instead of brushing through shrubs. Eye level (1.7 m) is preferred; in dense
+  // forests the camera rises into a sparser layer between the understory and the crowns.
+  function openPath(xs, ys, zs, flag, n, size, top) {
+    var g = Math.ceil(size), maxH = Math.max(3, Math.min(30, Math.floor(0.5 * top))), nz = maxH + 3;
+    var dens = new Float32Array(g * g * nz);
     for (var i = 0; i < n; i++) {
       if (flag[i]) continue;
-      var h = zs[i] / 100;
-      if (h < 0.4 || h > 3.5) continue;
+      var hz = zs[i] / 100 | 0;
+      if (hz >= nz) continue;
       var cx = Math.min(g - 1, xs[i] / 100 | 0), cy = Math.min(g - 1, ys[i] / 100 | 0);
-      dens[cy * g + cx]++;
+      dens[(hz * g + cy) * g + cx]++;
     }
-    var best = 0.38 * size, bestCost = Infinity, half = size / 2;
+    var heights = [1.7];
+    for (var hh = 3; hh <= maxH; hh++) heights.push(hh);
+    var best = { r: 0.38 * size, h: 1.7 }, bestCost = Infinity, half = size / 2;
     for (var f = 0.12; f <= 0.42; f += 0.02) {
-      var r = f * size, cost = 0;
-      for (var k = 0; k < 96; k++) {
-        var a = k / 96 * 6.2831853, px = Math.cos(a) * r + half, pz = Math.sin(a) * r + half;
-        for (var dx = -1; dx <= 1; dx++) for (var dz = -1; dz <= 1; dz++) {
-          var gx = (px | 0) + dx, gz = (pz | 0) + dz;
-          if (gx >= 0 && gz >= 0 && gx < g && gz < g) cost += dens[gz * g + gx];
+      var r = f * size;
+      for (var hi = 0; hi < heights.length; hi++) {
+        var H = heights[hi], z0 = Math.max(0, Math.round(H - 1.5)), z1 = Math.min(nz - 1, Math.round(H + 1.5)), cost = 0;
+        if (H < 2) z0 = 0; // at eye level count from just above the ground: 0.4 m shrubs block the view too
+        for (var k = 0; k < 96; k++) {
+          var a = k / 96 * 6.2831853, px = Math.cos(a) * r + half, pz = Math.sin(a) * r + half;
+          for (var dx = -1; dx <= 1; dx++) for (var dz = -1; dz <= 1; dz++) {
+            var gx = (px | 0) + dx, gz = (pz | 0) + dz;
+            if (gx < 0 || gz < 0 || gx >= g || gz >= g) continue;
+            for (var z = z0; z <= z1; z++) cost += dens[(z * g + gz) * g + gx];
+          }
         }
+        cost /= (z1 - z0 + 1);
+        if (f > 0.3) cost *= 1 + (f - 0.3); // slight preference for staying inside the plot
+        cost *= 1 + 0.03 * (H - 1.7); // and for eye level, unless higher up is clearly more open
+        if (cost < bestCost) { bestCost = cost; best = { r: r, h: H }; }
       }
-      if (f > 0.3) cost *= 1 + (f - 0.3); // slight preference for staying inside the plot
-      if (cost < bestCost) { bestCost = cost; best = r; }
     }
     return best;
   }
@@ -239,7 +250,7 @@
       return get('.bin').catch(function () { return get('.wasm'); }).then(function (buf) {
         var n = meta[lod].n, xs = new Uint16Array(buf, 0, n), ys = new Uint16Array(buf, n * 2, n), zs = new Uint16Array(buf, n * 4, n);
         var flag = new Uint8Array(buf, n * 6, n);
-        var B = BIOMES[name], half = meta.size / 2;
+        var B = biome(name), half = meta.size / 2;
         // colour range: 2nd to 98th percentile of vegetation height in this scan, so every scan uses the whole ramp
         var hs = [];
         for (var q = 0; q < n; q += Math.max(1, Math.floor(n / 20000))) if (!flag[q]) hs.push(zs[q] / 100);
@@ -258,10 +269,11 @@
           }
           col[j] = Math.min(1, c[0] * k); col[j + 1] = Math.min(1, c[1] * k); col[j + 2] = Math.min(1, c[2] * k);
         }
-        var v = meta.view || {}, r = v.r ? v.r * meta.size : openPath(xs, ys, zs, flag, n, meta.size);
+        var v = meta.view || {}, op = v.r && v.height ? null : openPath(xs, ys, zs, flag, n, meta.size, hi);
+        var r = v.r ? v.r * meta.size : op.r, eyeH = v.height || (op ? op.h : 1.7);
         return { pos: pos, col: col, count: n, bg: B.bg, real: true, size: meta.size, dataset: meta.dataset, license: meta.license, credit: meta.credit,
-          view: { r: r, turn: v.turn != null ? v.turn : 0.55, height: v.height || 1.7,
-                  pitch: v.pitch != null ? v.pitch : Math.max(0.08, Math.min(0.32, Math.atan((0.3 * hi - 1.7) / r))) } };
+          view: { r: r, turn: v.turn != null ? v.turn : 0.55, height: eyeH,
+                  pitch: v.pitch != null ? v.pitch : Math.max(0.04, Math.min(0.32, Math.atan((0.3 * hi - eyeH) / r))) } };
       });
     });
   }
@@ -336,13 +348,19 @@
 
   // ---------------------------------------------------------------- state
   var FOV = 70 * Math.PI / 180;
-  var camZ = 0, speed = reduceMotion ? 0 : 1.25; // m/s, a slow walk
+  var camZ = 0, speed = reduceMotion ? 0 : 0.5; // m/s, a slow stroll
   var yaw = 0, pitch = 0.06, tYaw = 0, tPitch = 0.06, basePitch = 0.06, dragYaw = 0, dragPitch = 0;
   var fogFar = 0, fogTarget = 120;
   var stereo = false, orient = null, orient0 = null;
   var visible = true, running = false, last = 0;
   var current = 'black-forest', loadToken = 0;
   var DATASETS = { 'black-forest': '2909', 'boreal': '1069', 'congo': '3140', 'borneo': '1477', 'australia': '1875' };
+  // extra scans can borrow a palette: <button data-biome="my-scan" data-palette="congo">
+  function biome(name) {
+    if (BIOMES[name]) return BIOMES[name];
+    var b = document.querySelector('button[data-biome="' + name + '"]');
+    return b && BIOMES[b.dataset.palette];
+  }
 
   function resize() {
     var dpr = Math.min(window.devicePixelRatio || 1, small ? 1.5 : 2);
@@ -404,12 +422,13 @@
 
   // ---------------------------------------------------------------- biome switch
   function setBiome(name) {
-    if (!BIOMES[name]) return;
+    if (!biome(name)) return;
     current = name;
     var token = ++loadToken;
     loadReal(name).catch(function () { return generate(name); }).then(function (c) {
       if (token !== loadToken) return;
       upload(c);
+      camZ = 0; // every scan starts at its chosen viewpoint
       basePitch = c.real ? c.view.pitch : 0.06; tPitch = basePitch; tYaw = 0; dragYaw = 0; dragPitch = 0;
       fogFar = 2; // forest emerges from the fog
       fogTarget = c.real ? Math.max(60, c.size * 0.9) : 120;
@@ -419,7 +438,7 @@
         if (el.tagName === 'A') el.href = 'https://3dtrees.earth/datasets/' + id; else el.textContent = id;
       });
       document.querySelectorAll('[data-hero-license]').forEach(function (el) { el.textContent = c.license || 'CC BY 4.0'; });
-      document.querySelectorAll('[data-hero-credit]').forEach(function (el) { el.textContent = c.credit || ''; });
+      document.querySelectorAll('[data-hero-credit]').forEach(function (el) { el.textContent = c.credit ? c.credit + ', ' : ''; });
       hero.classList.add('ready');
       start();
     });
