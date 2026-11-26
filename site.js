@@ -40,6 +40,18 @@
     });
     setTitle();
     if (focus) window.scrollTo(0, 0);
+    track(id);
+  }
+
+  // GoatCounter (index.html): count each tab as its own page, e.g. /3dtrees.edu/#news
+  var counted = null;
+  function track(id) {
+    var path = location.pathname + (id === 'project' ? '' : '#' + id);
+    if (path === counted) return;
+    var gc = window.goatcounter;
+    if (gc && gc.count) { counted = path; gc.count({ path: path, title: document.title }); return; }
+    var tag = document.getElementById('goatcounter');
+    if (tag && !tag.dataset.waiting) { tag.dataset.waiting = '1'; tag.addEventListener('load', function () { track(current); }); }
   }
   window.addEventListener('hashchange', function () {
     var id = location.hash.slice(1);
