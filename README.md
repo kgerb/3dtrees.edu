@@ -27,6 +27,10 @@ Only the active language is shown. Change both when you edit. Text inside the SV
 
 The language comes from `?lang=de|en`, then the visitor's last choice, then the browser language (German by default).
 
+## Changing CSS or JS
+
+GitHub Pages lets browsers cache `style.css` and the scripts for 10 minutes, so a new `index.html` can arrive with an old stylesheet or script. When you change any of them, bump the `?v=` value on their `<link>` and `<script>` tags in `index.html`.
+
 ## Images
 
 Gallery: put files into `assets/examples/` named `<region>-embedding.webp` (square AlphaEarth thumbnail) and `<region>-pointcloud.webp` (point-cloud screenshot), with region `black-forest`, `boreal`, `congo` or `borneo`. Until a file exists, a placeholder pattern is shown.
