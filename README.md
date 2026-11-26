@@ -50,3 +50,7 @@ Then open http://localhost:8000.
 ### Editing blog posts in the preview
 
 In the claude.ai preview of this site, each post has an "Beitrag bearbeiten" button (`post-edit.js`). Saving writes the changed text to `post-edits.json` in the preview only, as `{key: {from, html}}`; Claude then copies the new text into `index.html` here. On GitHub Pages the script does nothing.
+
+## Visitor counts
+
+GoatCounter counts visits without cookies or personal data. The dashboard is at https://kgerb.goatcounter.com. Each tab counts as its own page (`/3dtrees.edu/`, `#news`, `#about`). It doesn't count visits from the claude.ai preview, because that page runs in a frame.
