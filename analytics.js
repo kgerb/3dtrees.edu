@@ -6,7 +6,10 @@
 // browser, so a visit ends when the tab closes. No consent notice is shown.
 (function () {
   var POSTHOG_KEY = 'phc_vNw7fK9nL2QGmaUtnQbb7now5WxRKygGE6uag7FfgmuW'; // project API key (phc_...): public by design, safe in client code
-  var POSTHOG_HOST = 'https://eu.i.posthog.com';
+  // Ad blockers block PostHog's own hosts. A proxy on a neutral address (tools/analytics-proxy) gets past
+  // them: put its URL here, without a trailing slash. Empty = talk to PostHog directly.
+  var PROXY = '';
+  var POSTHOG_HOST = PROXY || 'https://eu.i.posthog.com';
   var queue = [];
   window.fvTrack = function (event, props) { if (queue) queue.push([event, props || {}]); else if (window.posthog) window.posthog.capture(event, props || {}); };
   // ?notrack sends nothing; automated browsers (test runs) send nothing unless ?track=1
@@ -14,11 +17,12 @@
 
   var s = document.createElement('script');
   s.async = true; s.crossOrigin = 'anonymous';
-  s.src = POSTHOG_HOST.replace('.i.posthog.com', '-assets.i.posthog.com') + '/static/array.js';
+  s.src = (PROXY || 'https://eu-assets.i.posthog.com') + '/static/array.js';
   s.onload = function () {
     var ph = window.posthog; if (!ph || !ph.init) return;
     ph.init(POSTHOG_KEY, {
       api_host: POSTHOG_HOST,
+      ui_host: 'https://eu.posthog.com',
       opt_out_useragent_filter: !!navigator.webdriver, // only reached with ?track=1, for testing
       defaults: '2025-05-24',
       persistence: 'memory',                 // no cookies, nothing written to the browser
@@ -32,6 +36,6 @@
     var q = queue; queue = null;
     q.forEach(function (e) { ph.capture(e[0], e[1]); });
   };
-  document.head.appendChild(s);
+  (document.head || document.documentElement).appendChild(s);
 
 })();
