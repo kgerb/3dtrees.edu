@@ -3,16 +3,24 @@
 const API_HOST = 'eu.i.posthog.com';
 const ASSET_HOST = 'eu-assets.i.posthog.com';
 
+function cors() {
+  return { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': '*' };
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname + url.search;
     if (url.pathname.startsWith('/static/') || url.pathname.startsWith('/array/')) {
       // the library and its config: cached at the edge
+      if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors() });
       let res = await caches.default.match(request);
       if (!res) {
-        res = await fetch('https://' + ASSET_HOST + path);
-        if (res.ok) ctx.waitUntil(caches.default.put(request, res.clone()));
+        const up = await fetch('https://' + ASSET_HOST + path);
+        // public files: any origin may read them (the config is fetched with fetch(), which needs this header)
+        res = new Response(up.body, up);
+        Object.entries(cors()).forEach(([k, v]) => res.headers.set(k, v));
+        if (up.ok) ctx.waitUntil(caches.default.put(request, res.clone()));
       }
       return res;
     }
