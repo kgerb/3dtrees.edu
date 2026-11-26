@@ -96,7 +96,7 @@
     var B = biome(name);
     seed = 4242 + name.length * 977;
     var maxPts = Math.round((small ? 90000 : 190000) * B.budget);
-    var pos = new Float32Array(maxPts * 3), col = new Float32Array(maxPts * 3);
+    var pos = new Float32Array(maxPts * 3), col = new Uint8Array(maxPts * 4);
     var n = 0;
     var maxH = 0;
     B.mix.forEach(function (m) { maxH = Math.max(maxH, m.h[1]); });
@@ -107,8 +107,8 @@
       // wrap z so the strip repeats seamlessly
       z = ((z % L) + L) % L;
       pos[j] = x; pos[j + 1] = y; pos[j + 2] = z;
-      var k = 0.85 + 0.3 * rnd();
-      col[j] = Math.min(1, r * k); col[j + 1] = Math.min(1, g * k); col[j + 2] = Math.min(1, b * k);
+      var k = 0.85 + 0.3 * rnd(), jc = n * 4;
+      col[jc] = Math.min(255, r * k * 255); col[jc + 1] = Math.min(255, g * k * 255); col[jc + 2] = Math.min(255, b * k * 255);
       n++;
     }
     function leafColor(y) {
@@ -199,7 +199,7 @@
         }
       }
     }
-    return { pos: pos.subarray(0, n * 3), col: col.subarray(0, n * 3), count: n, bg: B.bg };
+    return { pos: pos.subarray(0, n * 3), col: col.subarray(0, n * 4), count: n, bg: B.bg };
   }
 
   // ---------------------------------------------------------------- real scans
@@ -258,7 +258,7 @@
         hs.sort(function (a, b) { return a - b; });
         var lo = hs.length ? hs[Math.floor(hs.length * 0.02)] : 0, hi = hs.length ? hs[Math.floor(hs.length * 0.98)] : (meta.zmax || 30);
         if (hi - lo < 1) hi = lo + 1;
-        var pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
+        var pos = new Float32Array(n * 3), col = new Uint8Array(n * 4);
         seed = 99;
         for (var i = 0; i < n; i++) {
           var j = i * 3, h = zs[i] / 100;
@@ -268,7 +268,8 @@
           else {
             c = ramp(SCAN_RAMP, (h - lo) / (hi - lo));
           }
-          col[j] = Math.min(1, c[0] * k); col[j + 1] = Math.min(1, c[1] * k); col[j + 2] = Math.min(1, c[2] * k);
+          var jc = i * 4;
+          col[jc] = Math.min(255, c[0] * k * 255); col[jc + 1] = Math.min(255, c[1] * k * 255); col[jc + 2] = Math.min(255, c[2] * k * 255);
         }
         var v = meta.view || {}, op = v.r && v.height ? null : openPath(xs, ys, zs, flag, n, meta.size, hi);
         var r = v.r ? v.r * meta.size : op.r, eyeH = v.height || (op ? op.h : 1.7);
@@ -282,8 +283,8 @@
   // ---------------------------------------------------------------- GL setup
   var VS = [
     'attribute vec3 aPos; attribute vec3 aCol;',
-    'uniform mat4 uView; uniform mat4 uProj; uniform float uCamZ; uniform float uL; uniform float uFocal; uniform float uSize; uniform float uMaxPx; uniform float uNear;',
-    'varying vec3 vCol; varying float vDepth;',
+    'uniform mat4 uView; uniform mat4 uProj; uniform float uCamZ; uniform float uL; uniform float uFocal; uniform float uSize; uniform float uMaxPx; uniform float uNear; uniform float uFogFar;',
+    'varying vec3 vCol; varying float vFog;',
     'void main(){',
     '  vec3 p = aPos;',
     '  p.z = mod(p.z - uCamZ + 0.12 * uL, uL) - 0.12 * uL;',
@@ -292,17 +293,15 @@
     '  float d = max(0.1, -v.z);',
     '  gl_PointSize = clamp(uSize * uFocal / d, 1.5, uMaxPx);',
     '  if (d < uNear) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);', // hide leaves brushing the camera
-    '  vCol = aCol; vDepth = d;',
+    '  vCol = aCol; vFog = smoothstep(uFogFar * 0.3, uFogFar, d) * 0.92;',
     '}'
   ].join('\n');
   var FS = [
     'precision mediump float;',
-    'varying vec3 vCol; varying float vDepth;',
-    'uniform vec3 uBg; uniform float uFogFar;',
+    'varying vec3 vCol; varying float vFog;',
+    'uniform vec3 uBg;',
     'void main(){',
-    '  vec2 c = gl_PointCoord - 0.5; if (dot(c, c) > 0.25) discard;',
-    '  float f = smoothstep(uFogFar * 0.3, uFogFar, vDepth) * 0.92;',
-    '  gl_FragColor = vec4(mix(vCol, uBg, f), 1.0);',
+    '  gl_FragColor = vec4(mix(vCol, uBg, vFog), 1.0);',
     '}'
   ].join('\n');
 
@@ -331,14 +330,11 @@
     'varying vec2 vUv;',
     'float ld(vec2 uv){ float z = texture2D(uDepth, uv).r; if (z >= 1.0) return 0.0;',
     '  float lin = 2.0 * uN * uF / (uF + uN - (z * 2.0 - 1.0) * (uF - uN)); return log2(lin); }',
+    'float nb(float d, vec2 o){ float dn = ld(vUv + o * uPx * uRadius); return dn == 0.0 ? 0.0 : (d == 0.0 ? 100.0 : min(1.0, max(0.0, d - dn))); }',
     'void main(){',
-    '  float d = ld(vUv), sum = 0.0;',
-    '  for (int i = 0; i < 8; i++) {',
-    '    float a = float(i) * 0.7853982;',
-    '    float dn = ld(vUv + vec2(cos(a), sin(a)) * uPx * uRadius);',
-    '    if (dn != 0.0) sum += (d == 0.0) ? 100.0 : min(1.0, max(0.0, d - dn));', // capped: a twig 10 m in front shades no harder than one 2x closer
-    '  }',
-    '  float shade = d == 0.0 ? exp(-sum / 8.0 * 300.0 * uStrength) : mix(0.3, 1.0, exp(-sum / 8.0 * 300.0 * uStrength));',
+    '  float d = ld(vUv);', // capped per neighbour: a twig 10 m in front shades no harder than one 2x closer
+    '  float sum = nb(d, vec2(1.0, 0.0)) + nb(d, vec2(-1.0, 0.0)) + nb(d, vec2(0.0, 1.0)) + nb(d, vec2(0.0, -1.0));',
+    '  float shade = d == 0.0 ? exp(-sum / 4.0 * 300.0 * uStrength) : mix(0.3, 1.0, exp(-sum / 4.0 * 300.0 * uStrength));',
     '  vec4 c = texture2D(uColor, vUv);',
     '  gl_FragColor = vec4(c.rgb * shade, 1.0);',
     '}'
@@ -388,7 +384,7 @@
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, edl.depth);
     gl.uniform1i(edl.U.uColor, 0); gl.uniform1i(edl.U.uDepth, 1);
     gl.uniform2f(edl.U.uPx, 1 / w, 1 / h);
-    gl.uniform1f(edl.U.uRadius, EDL_RADIUS * Math.min(window.devicePixelRatio || 1, small ? 1.5 : 2));
+    gl.uniform1f(edl.U.uRadius, EDL_RADIUS * renderScale);
     gl.uniform1f(edl.U.uStrength, EDL_STRENGTH);
     gl.uniform1f(edl.U.uN, NEAR); gl.uniform1f(edl.U.uF, FAR);
     gl.disableVertexAttribArray(1);
@@ -412,21 +408,24 @@
   }
   function bindCloud() {
     gl.bindBuffer(gl.ARRAY_BUFFER, bufPos); gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
-    gl.bindBuffer(gl.ARRAY_BUFFER, bufCol); gl.enableVertexAttribArray(aCol); gl.vertexAttribPointer(aCol, 3, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufCol); gl.enableVertexAttribArray(aCol); gl.vertexAttribPointer(aCol, 3, gl.UNSIGNED_BYTE, true, 4, 0);
   }
 
   // ---------------------------------------------------------------- math
   var NEAR = 0.3, FAR = 400;
+  var PM = new Float32Array(16), VM = new Float32Array(16);
   function perspective(fovy, aspect, near, far) {
     var f = 1 / Math.tan(fovy / 2), nf = 1 / (near - far);
-    return new Float32Array([f / aspect, 0, 0, 0, 0, f, 0, 0, 0, 0, (far + near) * nf, -1, 0, 0, 2 * far * near * nf, 0]);
+    PM[0] = f / aspect; PM[5] = f; PM[10] = (far + near) * nf; PM[11] = -1; PM[14] = 2 * far * near * nf;
+    return PM;
   }
+  function setM(m, a) { for (var i = 0; i < 16; i++) m[i] = a[i]; return m; }
   function view(e, fw) {
     var s = [fw[1] * 0 - fw[2] * 1, fw[2] * 0 - fw[0] * 0, fw[0] * 1 - fw[1] * 0]; // cross(fw, up)
     var sl = Math.hypot(s[0], s[1], s[2]) || 1; s = [s[0] / sl, s[1] / sl, s[2] / sl];
     var u = [s[1] * fw[2] - s[2] * fw[1], s[2] * fw[0] - s[0] * fw[2], s[0] * fw[1] - s[1] * fw[0]];
     return {
-      m: new Float32Array([
+      m: setM(VM, [
         s[0], u[0], -fw[0], 0,
         s[1], u[1], -fw[1], 0,
         s[2], u[2], -fw[2], 0,
@@ -451,11 +450,34 @@
     return b && BIOMES[b.dataset.palette];
   }
 
-  function resize() {
-    var dpr = Math.min(window.devicePixelRatio || 1, small ? 1.5 : 2);
-    var w = Math.round(canvas.clientWidth * dpr), h = Math.round(canvas.clientHeight * dpr);
-    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+  // ---------------------------------------------------------------- adaptive quality
+  // Frame time decides how sharp the picture is and how many points are drawn. The points are stored in
+  // random order, so drawing the first part of the buffer is an even thinning of the whole scan.
+  // ?q=0.5 in the URL fixes the quality for testing.
+  var Q_FIXED = (function () { var m = /[?&]q=([\d.]+)/.exec(location.search); return m ? Math.max(0.2, Math.min(1, +m[1])) : 0; })();
+  var quality = Q_FIXED || (small ? 0.8 : 1), frameMs = 16.7, slowFor = 0, fastFor = 0, settle = 0, ceiling = 1, ceilingAge = 0;
+  var renderScale = 1;
+  function maxDpr() { return Math.min(window.devicePixelRatio || 1, small ? 1.25 : 1.5); }
+  function adapt(rawMs, dt) {
+    if (Q_FIXED) return;
+    if (settle > 0) { settle -= dt; return; } // after a switch or a hidden tab, the first frames are not representative
+    frameMs += (Math.min(rawMs, 200) - frameMs) * 0.1;
+    ceilingAge += dt; if (ceilingAge > 30) ceiling = 1;
+    if (frameMs > 22) { slowFor += dt; fastFor = 0; } else if (frameMs < 18) { fastFor += dt; slowFor = 0; } else { slowFor = 0; fastFor = 0; }
+    if (slowFor > 0.5 && quality > 0.25) {
+      ceiling = quality; ceilingAge = 0;
+      quality = Math.max(0.25, quality * (frameMs > 40 ? 0.7 : 0.85)); slowFor = 0; settle = 0.4;
+    } else if (fastFor > 3 && quality < Math.min(1, ceiling - 0.05)) {
+      quality = Math.min(1, ceiling - 0.05, quality + 0.1); fastFor = 0; settle = 0.4;
+    }
   }
+  function resize() {
+    var dpr = Math.max(Math.min(0.75, maxDpr()), maxDpr() * (0.5 + 0.5 * quality));
+    var w = Math.round(canvas.clientWidth * dpr), h = Math.round(canvas.clientHeight * dpr);
+    if (Math.abs(canvas.width - w) > 1 || Math.abs(canvas.height - h) > 1) { canvas.width = w; canvas.height = h; }
+    renderScale = canvas.width / Math.max(1, canvas.clientWidth);
+  }
+  function drawCount() { return cloud.real ? Math.round(cloud.count * Math.min(1, 0.35 + 0.65 * quality)) : cloud.count; }
 
   function drawEye(x0, w, h, eyeOffset) {
     gl.viewport(x0, 0, w, h);
@@ -476,12 +498,13 @@
     gl.uniformMatrix4fv(U.uView, false, vv.m);
     gl.uniformMatrix4fv(U.uProj, false, perspective(fov, aspect, NEAR, FAR));
     gl.uniform1f(U.uFocal, (h / 2) / Math.tan(fov / 2));
-    gl.drawArrays(gl.POINTS, 0, cloud.count);
+    gl.drawArrays(gl.POINTS, 0, drawCount());
   }
 
   function frame(t) {
     if (!running || !cloud) { running = false; return; }
-    var dt = Math.min(0.05, (t - last) / 1000 || 0); last = t;
+    var rawMs = t - last, dt = Math.min(0.05, rawMs / 1000 || 0); last = t;
+    adapt(rawMs, Math.min(0.25, rawMs / 1000 || 0)); // real time, so a slow device is noticed quickly
     camZ += speed * dt;
     fogFar += (fogTarget - fogFar) * Math.min(1, dt * 1.6);
     if (orient) {
@@ -498,7 +521,10 @@
     gl.clearColor(bg[0], bg[1], bg[2], 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     if (cloud.real) { gl.uniform1f(U.uCamZ, 0); gl.uniform1f(U.uL, 100000); } else { gl.uniform1f(U.uCamZ, camZ); gl.uniform1f(U.uL, L); }
-    if (cloud.real) { gl.uniform1f(U.uSize, small ? 0.08 : 0.07); gl.uniform1f(U.uMaxPx, small ? 4.0 : 5.0); gl.uniform1f(U.uNear, 2.2); }
+    if (cloud.real) {
+      var thin = Math.sqrt(cloud.count / drawCount()); // fewer points drawn: make each a little larger so the crowns stay closed
+      gl.uniform1f(U.uSize, (small ? 0.08 : 0.07) * thin); gl.uniform1f(U.uMaxPx, (small ? 4.0 : 5.0) * renderScale / maxDpr() * thin); gl.uniform1f(U.uNear, 2.2);
+    }
     else { gl.uniform1f(U.uSize, small ? 0.11 : 0.13); gl.uniform1f(U.uMaxPx, 10.0); gl.uniform1f(U.uNear, 0.0); }
     gl.uniform3fv(U.uBg, bg); gl.uniform1f(U.uFogFar, fogFar);
     if (stereo) { drawEye(0, W2 / 2, H2, -0.032); drawEye(W2 / 2, W2 / 2, H2, 0.032); }
@@ -507,7 +533,7 @@
     if (reduceMotion && !stereo && Math.abs(fogTarget - fogFar) < 0.5 && !dragging) { running = false; return; }
     requestAnimationFrame(frame);
   }
-  function start() { if (!running && visible && !document.hidden) { running = true; last = performance.now(); requestAnimationFrame(frame); } }
+  function start() { if (!running && visible && !document.hidden) { running = true; last = performance.now(); settle = 0.6; requestAnimationFrame(frame); } }
   function stop() { running = false; }
 
   // ---------------------------------------------------------------- biome switch
@@ -517,7 +543,7 @@
     var token = ++loadToken;
     loadReal(name).catch(function () { return generate(name); }).then(function (c) {
       if (token !== loadToken) return;
-      upload(c);
+      upload(c); settle = 0.8;
       camZ = 0; // every scan starts at its chosen viewpoint
       basePitch = c.real ? c.view.pitch : 0.06; tPitch = basePitch; tYaw = 0; dragYaw = 0; dragPitch = 0;
       fogFar = 2; // forest emerges from the fog
