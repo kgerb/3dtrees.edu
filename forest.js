@@ -530,15 +530,21 @@
   }
 
   // ---------------------------------------------------------------- adaptive quality
-  // Goal: every frame on time. When frames start to miss the display's refresh, fewer points are drawn;
-  // the points are stored in random order, so drawing the first part of the buffer thins the whole scan
-  // evenly, and each point grows a little to keep the crowns closed. Changing the point count costs
-  // nothing, unlike resizing the canvas, so resolution is lowered only as a last resort and never raised
-  // again mid-walk (each resize reallocates buffers and stalls a frame).
+  // Goal: every frame on time, with as many points as this device can draw. The viewer learns a point
+  // budget: when frames start to miss the display's refresh it draws fewer points, and once frames are
+  // steady again it tries more, so a fast device climbs back to the full scan. If a step up fails again, it
+  // waits longer before the next try (8, 16, 32 s ...). The budget is a number of points, so it carries over
+  // from forest to forest and is remembered for the next visit. The points are stored in random order, so
+  // drawing the first part of the buffer thins the whole scan evenly, and each point grows a little to keep
+  // the crowns closed. Changing the point count costs nothing, unlike resizing the canvas, so resolution is
+  // lowered only as a last resort and never raised again mid-walk (each resize reallocates buffers).
   // ?q=0.5 fixes the share of points for testing; ?fps=1 shows frame rate, points and resolution.
   var Q_FIXED = (function () { var m = /[?&]q=([\d.]+)/.exec(location.search); return m ? Math.max(0.2, Math.min(1, +m[1])) : 0; })();
-  var pts = Q_FIXED || 1, resLevel = 1, renderScale = 1;
-  var vsync = 16.7, frameEma = 16.7, winT = 0, seen = 0, late = 0, bad = 0, calm = 0, settle = 0, ceiling = 1, ceilingAge = 0;
+  var MIN_BUDGET = 80000, BUDGET_KEY = 'fv-budget';
+  var budget = (function () { try { var v = +localStorage.getItem(BUDGET_KEY); return v >= MIN_BUDGET ? v : Infinity; } catch (e) { return Infinity; } })();
+  function saveBudget() { try { if (isFinite(budget)) localStorage.setItem(BUDGET_KEY, String(Math.round(budget))); else localStorage.removeItem(BUDGET_KEY); } catch (e) {} }
+  var failAt = Infinity, hold = 8, sinceCut = 0, resLevel = 1, renderScale = 1;
+  var vsync = 16.7, frameEma = 16.7, winT = 0, seen = 0, late = 0, bad = 0, calm = 0, settle = 0;
   function maxDpr() { return Math.min(window.devicePixelRatio || 1, small ? 1.25 : 1.5); }
   function adapt(rawMs, sec) {
     if (Q_FIXED || !cloud || !cloud.real) return;
@@ -550,18 +556,29 @@
     // frames that are steadily a bit too slow
     frameEma += (Math.min(rawMs, 250) - frameEma) * 0.1;
     seen++; if (rawMs > vsync * 1.6 && (rawMs < vsync * 3.5 || frameEma > vsync * 2)) late++;
-    ceilingAge += sec; if (ceilingAge > 20) { ceiling = Math.min(1, ceiling + 0.1); ceilingAge = 10; }
-    winT += sec;
+    sinceCut += sec; winT += sec;
     if (seen < 30 && (winT < 0.5 || seen < 3)) return; // a window is 30 frames or half a second
+    var drawn = drawCount();
     bad = late * 10 >= seen ? bad + 1 : 0; // more than one frame in ten missed the refresh...
-    if (bad >= 2) { // ...twice in a row (about one second)
-      bad = 0; ceiling = pts; ceilingAge = 0; calm = 0; settle = 0.25;
-      if (pts > 0.3) pts = Math.max(0.3, pts * (late * 2 >= seen ? 0.7 : 0.85));
-      else if (resLevel > 0.7) resLevel = Math.max(0.7, resLevel - 0.15);
-    } else if (late === 0 && !bad) {
-      calm += seen * vsync / 1000;
-      if (calm > 3 && pts < ceiling - 0.04) { pts = Math.min(1, ceiling - 0.04, pts + 0.05); calm = 0; }
-    }
+    if (bad >= 2) { // ...twice in a row (about one second): fewer points
+      bad = 0; calm = 0; settle = 0.25;
+      if (drawn > MIN_BUDGET) {
+        if (drawn >= failAt * 0.95) hold = Math.min(64, hold * 2); // a step up failed again: wait longer next time
+        failAt = drawn; sinceCut = 0;
+        budget = Math.max(MIN_BUDGET, drawn * (late * 2 >= seen ? 0.7 : 0.85));
+        saveBudget();
+      } else if (resLevel > 0.7) resLevel = Math.max(0.7, resLevel - 0.15);
+    } else if (late * 20 <= seen && !bad) { // steady (at most one frame in twenty late): try more points
+      calm += winT;
+      if (calm > 2 && drawn >= Math.min(budget, cloud.count) && budget < cloud.count) {
+        var next = Math.min(cloud.count, drawn * (isFinite(failAt) ? 1.12 : 1.25) + 20000); // bolder with no failure known
+        if (next < failAt * 0.95 || sinceCut > hold) {
+          budget = next >= cloud.count && !isFinite(failAt) ? Infinity : next; // all points fine: no limit known
+          calm = 0; saveBudget();
+        }
+      }
+      if (sinceCut > hold + 20 && drawn > failAt) { failAt = Infinity; hold = 8; } // fine above the old limit for a while
+    } else calm = 0;
     seen = 0; late = 0; winT = 0;
   }
   function resize() {
@@ -574,7 +591,7 @@
   // 3 s, and the points shrink as they get denser (see thin), so detail fills in instead of popping.
   function drawCount() {
     if (!cloud.real) return cloud.count;
-    var n = Math.round(cloud.count * pts), rv = cloud.reveal;
+    var n = Q_FIXED ? Math.round(cloud.count * Q_FIXED) : Math.min(cloud.count, Math.round(budget)), rv = cloud.reveal;
     if (rv) {
       var k = Math.min(1, (performance.now() - rv.t0) / 3000), e = k * k * (3 - 2 * k);
       n = Math.min(n, Math.round(rv.from + (cloud.count - rv.from) * e));
@@ -587,7 +604,7 @@
   var fpsMax = 0, fpsPrev = 0;
   function fpsTick(t) {
     fpsN++; fpsMax = Math.max(fpsMax, t - fpsPrev); fpsPrev = t; if (t - fpsT < 500) return;
-    fpsBox.textContent = Math.round(fpsN * 1000 / (t - fpsT)) + ' fps · longest ' + Math.round(fpsMax) + ' ms · ' + (cloud.count / 1e6).toFixed(2) + 'M × ' + Math.round(pts * 100) + '% points · ' +
+    fpsBox.textContent = Math.round(fpsN * 1000 / (t - fpsT)) + ' fps · longest ' + Math.round(fpsMax) + ' ms · ' + (cloud.count / 1e6).toFixed(2) + 'M × ' + Math.round(drawCount() / cloud.count * 100) + '% points · ' +
       canvas.width + '×' + canvas.height + (edl && EDL_STRENGTH > 0 ? ' · depth on' : ' · depth off') + (worker ? '' : ' · no worker');
     fpsN = 0; fpsT = t; fpsMax = 0;
   }
@@ -660,7 +677,7 @@
     loadReal(name).catch(function () { return generate(name); }).then(function (c) {
       if (token !== loadToken) return;
       upload(c); settle = 2; idleSince = performance.now(); // the first frames after a new scan include buffer uploads
-      if (c.real && c.full > c.count) loadDetail(name, c).then(function (d) { if (token === loadToken) { uploadDetail(c, d); prefetchOthers(); } }, function () {});
+      if (c.real && c.full > c.count && budget > c.count * 0.9) loadDetail(name, c).then(function (d) { if (token === loadToken) { uploadDetail(c, d); prefetchOthers(); } }, function () {});
       else prefetchOthers();
       camZ = 0; // every scan starts at its chosen viewpoint
       basePitch = c.real ? c.view.pitch : 0.06; tPitch = basePitch; tYaw = 0; dragYaw = 0; dragPitch = 0;
