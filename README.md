@@ -29,7 +29,7 @@ The language comes from `?lang=de|en`, then the visitor's last choice, then the 
 
 ## Changing CSS or JS
 
-GitHub Pages lets browsers cache `style.css` and the scripts for 10 minutes, so a new `index.html` can arrive with an old stylesheet or script. When you change any of them, bump the `?v=` value on their `<link>` and `<script>` tags in `index.html`.
+GitHub Pages lets browsers cache `style.css` and the scripts for 10 minutes, so a new `index.html` can arrive with an old stylesheet or script. When you change any of them, bump the `?v=` value on their `<link>` and `<script>` tags in `index.html`. When files in `assets/hero/` change, also bump `ASSET_V` in `forest.js` (and then the `?v=` of `forest.js`).
 
 ## Images
 
