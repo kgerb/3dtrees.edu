@@ -204,90 +204,136 @@
   }
 
   // ---------------------------------------------------------------- real scans
-  // Pick the walking circle and eye height with the least vegetation around the camera, so it walks
-  // through open forest instead of brushing through shrubs. Eye level (1.7 m) is preferred; in dense
-  // forests the camera rises into a sparser layer between the understory and the crowns.
-  function openPath(xs, ys, zs, flag, n, size, top) {
-    var g = Math.ceil(size), maxH = Math.max(3, Math.min(30, Math.floor(0.5 * top))), nz = maxH + 3;
-    var dens = new Float32Array(g * g * nz);
-    for (var i = 0; i < n; i++) {
-      if (flag[i]) continue;
-      var hz = zs[i] / 100 | 0;
-      if (hz >= nz) continue;
-      var cx = Math.min(g - 1, xs[i] / 100 | 0), cy = Math.min(g - 1, ys[i] / 100 | 0);
-      dens[(hz * g + cy) * g + cx]++;
-    }
-    var heights = [1.7];
-    for (var hh = 3; hh <= maxH; hh++) heights.push(hh);
-    var best = { r: 0.38 * size, h: 1.7 }, bestCost = Infinity, half = size / 2;
-    for (var f = 0.12; f <= 0.42; f += 0.02) {
-      var r = f * size;
-      for (var hi = 0; hi < heights.length; hi++) {
-        var H = heights[hi], z0 = Math.max(0, Math.round(H - 1.5)), z1 = Math.min(nz - 1, Math.round(H + 1.5)), cost = 0;
-        if (H < 2) z0 = 0; // at eye level count from just above the ground: 0.4 m shrubs block the view too
-        for (var k = 0; k < 96; k++) {
-          var a = k / 96 * 6.2831853, px = Math.cos(a) * r + half, pz = Math.sin(a) * r + half;
-          for (var dx = -1; dx <= 1; dx++) for (var dz = -1; dz <= 1; dz++) {
-            var gx = (px | 0) + dx, gz = (pz | 0) + dz;
-            if (gx < 0 || gz < 0 || gx >= g || gz >= g) continue;
-            for (var z = z0; z <= z1; z++) cost += dens[(z * g + gz) * g + gx];
-          }
-        }
-        cost /= (z1 - z0 + 1);
-        if (f > 0.3) cost *= 1 + (f - 0.3); // slight preference for staying inside the plot
-        cost *= 1 + 0.03 * (H - 1.7); // and for eye level, unless higher up is clearly more open
-        if (cost < bestCost) { bestCost = cost; best = { r: r, h: H }; }
-      }
-    }
-    return best;
-  }
-  // assets/hero/<key>.json + .bin, written by tools/make_hero_clouds.py from 3Dtrees.earth datasets.
+  // assets/hero/<key>.json + .lo.bin (250k points) + .hi.bin (2M), written by tools/make_hero_clouds.py on geos.
+  // File layout: uint16 x, y, z in cm (each a block of n), then n uint8 ground flags; points in random order.
+  // Each scan appears from the light file first; on desktops the full file follows and replaces it.
   var ASSET_V = '20261126-3'; // bump when assets/hero files change, so browsers don't keep old ones
-  function loadReal(name) {
-    var base = 'assets/hero/' + name;
-    return fetch(base + '.json?v=' + ASSET_V).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (meta) {
-      var lod = small || !meta.hi ? 'lo' : 'hi';
-      // .bin on the website; the claude.ai preview only serves web file types, so it gets the same bytes as .wasm
-      function get(ext) { return fetch(base + '.' + lod + ext + '?v=' + ASSET_V).then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); }); }
-      return get('.bin').catch(function () { return get('.wasm'); }).then(function (buf) {
-        var n = meta[lod].n, xs = new Uint16Array(buf, 0, n), ys = new Uint16Array(buf, n * 2, n), zs = new Uint16Array(buf, n * 4, n);
-        var flag = new Uint8Array(buf, n * 6, n);
-        var B = biome(name), half = meta.size / 2;
-        // colour range: 2nd to 98th percentile of vegetation height in this scan, so every scan uses the whole ramp
-        var hs = [];
-        for (var q = 0; q < n; q += Math.max(1, Math.floor(n / 20000))) if (!flag[q]) hs.push(zs[q] / 100);
-        hs.sort(function (a, b) { return a - b; });
-        var lo = hs.length ? hs[Math.floor(hs.length * 0.02)] : 0, hi = hs.length ? hs[Math.floor(hs.length * 0.98)] : (meta.zmax || 30);
-        if (hi - lo < 1) hi = lo + 1;
-        var pos = new Float32Array(n * 3), col = new Uint8Array(n * 4);
-        seed = 99;
-        for (var i = 0; i < n; i++) {
-          var j = i * 3, h = zs[i] / 100;
-          pos[j] = xs[i] / 100 - half; pos[j + 1] = h; pos[j + 2] = ys[i] / 100 - half;
-          var c, k = 0.85 + 0.3 * rnd();
-          if (flag[i]) { c = B.ground[i & 1]; k *= 1.6; }
-          else {
-            c = ramp(SCAN_RAMP, (h - lo) / (hi - lo));
+
+  // Self-contained (also runs as a Web Worker): turns a file into GPU-ready arrays.
+  // pos: uint16 x, height, y, 0 per point (cm); col: rgba bytes. Optionally picks the walking path.
+  function decodeScan(buf, n, o) {
+    var xs = new Uint16Array(buf, 0, n), ys = new Uint16Array(buf, n * 2, n), zs = new Uint16Array(buf, n * 4, n);
+    var flag = new Uint8Array(buf, n * 6, n), i;
+    var lo = o.lo, hi = o.hi;
+    if (lo == null) { // colour range: 2nd to 98th percentile of vegetation height, so every scan uses the whole ramp
+      var hs = [];
+      for (i = 0; i < n; i += Math.max(1, Math.floor(n / 20000))) if (!flag[i]) hs.push(zs[i] / 100);
+      hs.sort(function (a, b) { return a - b; });
+      lo = hs.length ? hs[Math.floor(hs.length * 0.02)] : 0; hi = hs.length ? hs[Math.floor(hs.length * 0.98)] : (o.zmax || 30);
+      if (hi - lo < 1) hi = lo + 1;
+    }
+    var pos = new Uint16Array(n * 4), col = new Uint8Array(n * 4), R = o.ramp, last = R.length - 1, g0 = o.ground[0], g1 = o.ground[1];
+    var s = 99, span = 1 / (hi - lo);
+    for (i = 0; i < n; i++) {
+      var j = i * 4, z = zs[i];
+      pos[j] = xs[i]; pos[j + 1] = z; pos[j + 2] = ys[i];
+      s = (s * 16807) % 2147483647;
+      var k = 255 * (0.85 + 0.3 * (s - 1) / 2147483646), r, g, b;
+      if (flag[i]) { var gc = i & 1 ? g1 : g0; k *= 1.6; r = gc[0]; g = gc[1]; b = gc[2]; }
+      else {
+        var t = (z / 100 - lo) * span; t = (t < 0 ? 0 : t > 1 ? 1 : t) * last;
+        var a = t < last ? t | 0 : last - 1, u = t - a, A = R[a], B = R[a + 1];
+        r = A[0] + (B[0] - A[0]) * u; g = A[1] + (B[1] - A[1]) * u; b = A[2] + (B[2] - A[2]) * u;
+      }
+      col[j] = Math.min(255, r * k); col[j + 1] = Math.min(255, g * k); col[j + 2] = Math.min(255, b * k); col[j + 3] = 255;
+    }
+    var out = { pos: pos, col: col, n: n, lo: lo, hi: hi };
+    if (o.wantPath) {
+      // Walking circle and eye height with the least vegetation around the camera, so it walks through open
+      // forest instead of brushing through shrubs. Eye level (1.7 m) is preferred; in dense forests the camera
+      // rises into a sparser layer between the understory and the crowns.
+      var size = o.size, gsz = Math.ceil(size), maxH = Math.max(3, Math.min(30, Math.floor(0.5 * hi))), nz = maxH + 3;
+      var dens = new Float32Array(gsz * gsz * nz);
+      for (i = 0; i < n; i++) {
+        if (flag[i]) continue;
+        var hz = zs[i] / 100 | 0;
+        if (hz >= nz) continue;
+        dens[(hz * gsz + Math.min(gsz - 1, ys[i] / 100 | 0)) * gsz + Math.min(gsz - 1, xs[i] / 100 | 0)]++;
+      }
+      var heights = [1.7];
+      for (var hh = 3; hh <= maxH; hh++) heights.push(hh);
+      var best = { r: 0.38 * size, h: 1.7 }, bestCost = Infinity, half = size / 2;
+      for (var f = 0.12; f <= 0.42; f += 0.02) {
+        var rad = f * size;
+        for (var hi2 = 0; hi2 < heights.length; hi2++) {
+          var H = heights[hi2], z0 = Math.max(0, Math.round(H - 1.5)), z1 = Math.min(nz - 1, Math.round(H + 1.5)), cost = 0;
+          if (H < 2) z0 = 0; // at eye level count from just above the ground: 0.4 m shrubs block the view too
+          for (var q = 0; q < 96; q++) {
+            var ang = q / 96 * 6.2831853, px = Math.cos(ang) * rad + half, pz = Math.sin(ang) * rad + half;
+            for (var dx = -1; dx <= 1; dx++) for (var dz = -1; dz <= 1; dz++) {
+              var gx = (px | 0) + dx, gz = (pz | 0) + dz;
+              if (gx < 0 || gz < 0 || gx >= gsz || gz >= gsz) continue;
+              for (var zz = z0; zz <= z1; zz++) cost += dens[(zz * gsz + gz) * gsz + gx];
+            }
           }
-          var jc = i * 4;
-          col[jc] = Math.min(255, c[0] * k * 255); col[jc + 1] = Math.min(255, c[1] * k * 255); col[jc + 2] = Math.min(255, c[2] * k * 255);
+          cost /= (z1 - z0 + 1);
+          if (f > 0.3) cost *= 1 + (f - 0.3); // slight preference for staying inside the plot
+          cost *= 1 + 0.03 * (H - 1.7); // and for eye level, unless higher up is clearly more open
+          if (cost < bestCost) { bestCost = cost; best = { r: rad, h: H }; }
         }
-        var v = meta.view || {}, op = v.r && v.height ? null : openPath(xs, ys, zs, flag, n, meta.size, hi);
-        var r = v.r ? v.r * meta.size : op.r, eyeH = v.height || (op ? op.h : 1.7);
-        return { pos: pos, col: col, count: n, bg: B.bg, real: true, size: meta.size, dataset: meta.dataset, license: meta.license, credit: meta.credit,
+      }
+      out.path = best;
+    }
+    return out;
+  }
+  // .bin on the website; the claude.ai preview only serves web file types, so it gets the same bytes as .wasm
+  function fetchScan(url) {
+    function get(u) { return fetch(u).then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }); }
+    return get(url + '.bin?v=' + ASSET_V).catch(function () { return get(url + '.wasm?v=' + ASSET_V); });
+  }
+  // Decoding 2M points takes a few hundred ms; in a worker the walk keeps running meanwhile.
+  var worker = null, jobs = {}, jobId = 0;
+  try {
+    var src = 'var ASSET_V=' + JSON.stringify(ASSET_V) + ';' + decodeScan.toString() + fetchScan.toString() +
+      'onmessage=function(e){var d=e.data;fetchScan(d.url).then(function(b){var r=decodeScan(b,d.n,d.o);r.id=d.id;postMessage(r,[r.pos.buffer,r.col.buffer]);})' +
+      '.catch(function(err){postMessage({id:d.id,error:String(err)});});};';
+    worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+    worker.onmessage = function (e) { var j = jobs[e.data.id]; delete jobs[e.data.id]; if (j) (e.data.error ? j.retry : j.ok)(e.data); }; // on a worker error, try once more without it
+    worker.onerror = function () { worker = null; Object.keys(jobs).forEach(function (k) { var j = jobs[k]; delete jobs[k]; j.retry(); }); };
+  } catch (e) { worker = null; }
+  function scanJob(url, n, o) {
+    var direct = function () { return fetchScan(url).then(function (b) { return decodeScan(b, n, o); }); };
+    if (!worker) return direct();
+    return new Promise(function (ok, no) {
+      var id = ++jobId;
+      jobs[id] = { ok: ok, no: no, retry: function () { direct().then(ok, no); } };
+      worker.postMessage({ id: id, url: new URL(url, location.href).href, n: n, o: o });
+    });
+  }
+  var metaCache = {};
+  function loadMeta(name) {
+    return metaCache[name] || (metaCache[name] = fetch('assets/hero/' + name + '.json?v=' + ASSET_V)
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .catch(function (e) { delete metaCache[name]; throw e; }));
+  }
+  function scanOpts(name, meta) {
+    var B = biome(name), v = meta.view || {};
+    return { ramp: SCAN_RAMP, ground: B.ground, size: meta.size, zmax: meta.zmax, wantPath: !(v.r && v.height) };
+  }
+  function loadReal(name) { // the light file, with camera path and colour range
+    return loadMeta(name).then(function (meta) {
+      return scanJob('assets/hero/' + name + '.lo', meta.lo.n, scanOpts(name, meta)).then(function (d) {
+        var v = meta.view || {}, B = biome(name);
+        var r = v.r ? v.r * meta.size : d.path.r, eyeH = v.height || (d.path ? d.path.h : 1.7);
+        return { pos: d.pos, col: d.col, count: d.n, full: !small && meta.hi ? meta.hi.n : d.n, bg: B.bg, real: true, half: meta.size / 2,
+          size: meta.size, dataset: meta.dataset, license: meta.license, credit: meta.credit, meta: meta, range: [d.lo, d.hi],
           view: { r: r, turn: v.turn != null ? v.turn : 0.55, height: eyeH,
-                  pitch: v.pitch != null ? v.pitch : Math.max(0.04, Math.min(0.32, Math.atan((0.3 * hi - eyeH) / r))) } };
+                  pitch: v.pitch != null ? v.pitch : Math.max(0.04, Math.min(0.32, Math.atan((0.3 * d.hi - eyeH) / r))) } };
       });
     });
+  }
+  function loadDetail(name, c) { // the full file, same colours as the light one
+    var o = scanOpts(name, c.meta); o.wantPath = false; o.lo = c.range[0]; o.hi = c.range[1];
+    return scanJob('assets/hero/' + name + '.hi', c.meta.hi.n, o);
   }
 
   // ---------------------------------------------------------------- GL setup
   var VS = [
     'attribute vec3 aPos; attribute vec3 aCol;',
-    'uniform mat4 uView; uniform mat4 uProj; uniform float uCamZ; uniform float uL; uniform float uFocal; uniform float uSize; uniform float uMaxPx; uniform float uNear; uniform float uFogFar;',
+    'uniform mat4 uView; uniform mat4 uProj; uniform float uCamZ; uniform float uL; uniform float uFocal; uniform float uSize; uniform float uMaxPx; uniform float uNear; uniform float uFogFar; uniform float uPosScale; uniform vec3 uPosOff;',
     'varying vec3 vCol; varying float vFog; varying float vLd;',
     'void main(){',
-    '  vec3 p = aPos;',
+    '  vec3 p = aPos * uPosScale + uPosOff;',
     '  p.z = mod(p.z - uCamZ + 0.12 * uL, uL) - 0.12 * uL;',
     '  vec4 v = uView * vec4(p, 1.0);',
     '  gl_Position = uProj * v;',
@@ -316,9 +362,10 @@
   if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { hero.classList.add('no-webgl'); return; }
   gl.useProgram(prog);
   var U = {};
-  ['uView', 'uProj', 'uCamZ', 'uL', 'uFocal', 'uSize', 'uMaxPx', 'uNear', 'uBg', 'uFogFar'].forEach(function (k) { U[k] = gl.getUniformLocation(prog, k); });
+  ['uView', 'uProj', 'uCamZ', 'uL', 'uFocal', 'uSize', 'uMaxPx', 'uNear', 'uBg', 'uFogFar', 'uPosScale', 'uPosOff'].forEach(function (k) { U[k] = gl.getUniformLocation(prog, k); });
   var aPos = gl.getAttribLocation(prog, 'aPos'), aCol = gl.getAttribLocation(prog, 'aCol');
-  var bufPos = gl.createBuffer(), bufCol = gl.createBuffer();
+  // two buffer pairs: the scan on screen, and the one being uploaded in slices to replace it
+  var BUF = [{ pos: gl.createBuffer(), col: gl.createBuffer() }, { pos: gl.createBuffer(), col: gl.createBuffer() }], front = 0;
   gl.enable(gl.DEPTH_TEST);
 
   // ---------------------------------------------------------------- eye-dome lighting
@@ -399,15 +446,36 @@
   })();
 
   var cloud = null;
+  var pending = null; // full-detail scan being copied to the GPU, a slice per frame
   function upload(c) {
-    cloud = c;
-    gl.bindBuffer(gl.ARRAY_BUFFER, bufPos); gl.bufferData(gl.ARRAY_BUFFER, c.pos, gl.STATIC_DRAW);
-    gl.bindBuffer(gl.ARRAY_BUFFER, bufCol); gl.bufferData(gl.ARRAY_BUFFER, c.col, gl.STATIC_DRAW);
+    cloud = c; pending = null;
+    var b = BUF[front];
+    gl.bindBuffer(gl.ARRAY_BUFFER, b.pos); gl.bufferData(gl.ARRAY_BUFFER, c.pos, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, b.col); gl.bufferData(gl.ARRAY_BUFFER, c.col, gl.STATIC_DRAW);
+    c.pos = c.col = null; // the GPU has them now
+    bindCloud();
+  }
+  // Copying 24 MB to the GPU in one go stalls a frame; slices of 200k points don't.
+  function uploadDetail(c, d) {
+    var b = BUF[1 - front];
+    gl.bindBuffer(gl.ARRAY_BUFFER, b.pos); gl.bufferData(gl.ARRAY_BUFFER, d.pos.byteLength, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, b.col); gl.bufferData(gl.ARRAY_BUFFER, d.col.byteLength, gl.STATIC_DRAW);
+    pending = { c: c, d: d, at: 0 };
+    bindCloud();
+  }
+  function stepUpload() {
+    var p = pending, b = BUF[1 - front], n = p.d.n, end = Math.min(n, p.at + 200000);
+    gl.bindBuffer(gl.ARRAY_BUFFER, b.pos); gl.bufferSubData(gl.ARRAY_BUFFER, p.at * 8, p.d.pos.subarray(p.at * 4, end * 4));
+    gl.bindBuffer(gl.ARRAY_BUFFER, b.col); gl.bufferSubData(gl.ARRAY_BUFFER, p.at * 4, p.d.col.subarray(p.at * 4, end * 4));
+    p.at = end;
+    if (end >= n) { front = 1 - front; p.c.count = n; pending = null; settle = Math.max(settle, 0.5); }
     bindCloud();
   }
   function bindCloud() {
-    gl.bindBuffer(gl.ARRAY_BUFFER, bufPos); gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
-    gl.bindBuffer(gl.ARRAY_BUFFER, bufCol); gl.enableVertexAttribArray(aCol); gl.vertexAttribPointer(aCol, 3, gl.UNSIGNED_BYTE, true, 4, 0);
+    var b = BUF[front], real = cloud && cloud.real;
+    gl.bindBuffer(gl.ARRAY_BUFFER, b.pos); gl.enableVertexAttribArray(aPos);
+    if (real) gl.vertexAttribPointer(aPos, 3, gl.UNSIGNED_SHORT, false, 8, 0); else gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, b.col); gl.enableVertexAttribArray(aCol); gl.vertexAttribPointer(aCol, 3, gl.UNSIGNED_BYTE, true, 4, 0);
   }
 
   // ---------------------------------------------------------------- math
@@ -493,10 +561,12 @@
   function drawCount() { return cloud.real ? Math.round(cloud.count * pts) : cloud.count; }
   var fpsBox = /[?&]fps=1/.test(location.search) ? document.createElement('div') : null, fpsN = 0, fpsT = 0;
   if (fpsBox) { fpsBox.style.cssText = 'position:fixed;left:8px;top:64px;z-index:99;font:12px/1.3 monospace;color:#fff;background:rgba(0,0,0,.6);padding:4px 6px;border-radius:4px;pointer-events:none'; document.body.appendChild(fpsBox); }
+  var fpsMax = 0, fpsPrev = 0;
   function fpsTick(t) {
-    fpsN++; if (t - fpsT < 500) return;
-    fpsBox.textContent = Math.round(fpsN * 1000 / (t - fpsT)) + ' fps · ' + Math.round(pts * 100) + '% points · ' + canvas.width + '×' + canvas.height + (edl && EDL_STRENGTH > 0 ? ' · depth on' : ' · depth off');
-    fpsN = 0; fpsT = t;
+    fpsN++; fpsMax = Math.max(fpsMax, t - fpsPrev); fpsPrev = t; if (t - fpsT < 500) return;
+    fpsBox.textContent = Math.round(fpsN * 1000 / (t - fpsT)) + ' fps · longest ' + Math.round(fpsMax) + ' ms · ' + (cloud.count / 1e6).toFixed(2) + 'M × ' + Math.round(pts * 100) + '% points · ' +
+      canvas.width + '×' + canvas.height + (edl && EDL_STRENGTH > 0 ? ' · depth on' : ' · depth off') + (worker ? '' : ' · no worker');
+    fpsN = 0; fpsT = t; fpsMax = 0;
   }
 
   function drawEye(x0, w, h, eyeOffset) {
@@ -541,9 +611,11 @@
     var useEdl = !!(edl && cloud.real && EDL_STRENGTH > 0 && edlTarget(W2, H2));
     gl.clearColor(bg[0], bg[1], bg[2], useEdl ? 0 : 1); // alpha 0 marks sky for the depth pass
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    if (cloud.real) { gl.uniform1f(U.uCamZ, 0); gl.uniform1f(U.uL, 100000); } else { gl.uniform1f(U.uCamZ, camZ); gl.uniform1f(U.uL, L); }
+    if (pending) stepUpload();
+    if (cloud.real) { gl.uniform1f(U.uCamZ, 0); gl.uniform1f(U.uL, 100000); gl.uniform1f(U.uPosScale, 0.01); gl.uniform3f(U.uPosOff, -cloud.half, 0, -cloud.half); }
+    else { gl.uniform1f(U.uCamZ, camZ); gl.uniform1f(U.uL, L); gl.uniform1f(U.uPosScale, 1); gl.uniform3f(U.uPosOff, 0, 0, 0); }
     if (cloud.real) {
-      var thin = Math.sqrt(cloud.count / drawCount()); // fewer points drawn: make each a little larger so the crowns stay closed
+      var thin = Math.min(2, Math.sqrt(cloud.full / drawCount())); // fewer points drawn: make each a little larger so the crowns stay closed
       gl.uniform1f(U.uSize, (small ? 0.08 : 0.07) * thin); gl.uniform1f(U.uMaxPx, (small ? 4.0 : 5.0) * renderScale / maxDpr() * thin); gl.uniform1f(U.uNear, 2.2);
     }
     else { gl.uniform1f(U.uSize, small ? 0.11 : 0.13); gl.uniform1f(U.uMaxPx, 10.0); gl.uniform1f(U.uNear, 0.0); }
@@ -565,6 +637,8 @@
     loadReal(name).catch(function () { return generate(name); }).then(function (c) {
       if (token !== loadToken) return;
       upload(c); settle = 2; // the first frames after a new scan include buffer uploads
+      if (c.real && c.full > c.count) loadDetail(name, c).then(function (d) { if (token === loadToken) { uploadDetail(c, d); prefetchOthers(); } }, function () {});
+      else prefetchOthers();
       camZ = 0; // every scan starts at its chosen viewpoint
       basePitch = c.real ? c.view.pitch : 0.06; tPitch = basePitch; tYaw = 0; dragYaw = 0; dragPitch = 0;
       fogFar = 2; // forest emerges from the fog
@@ -582,6 +656,19 @@
     hero.dataset.biome = name;
     document.querySelectorAll('[data-biome]').forEach(function (b) {
       if (b.tagName === 'BUTTON') b.setAttribute('aria-pressed', String(b.dataset.biome === name));
+    });
+  }
+  // Once the first scan is in, quietly fetch the light files of the other forests, so switching is quick.
+  var prefetched = false;
+  function prefetchOthers() {
+    if (prefetched || small || (navigator.connection && navigator.connection.saveData)) return;
+    prefetched = true;
+    var keys = Array.prototype.map.call(document.querySelectorAll('button[data-biome]'), function (b) { return b.dataset.biome; });
+    var later = window.requestIdleCallback ? function (f) { requestIdleCallback(f, { timeout: 4000 }); } : function (f) { setTimeout(f, 1500); };
+    later(function () {
+      keys.reduce(function (p, k) {
+        return p.then(function () { return loadMeta(k).then(function () { return fetchScan('assets/hero/' + k + '.lo'); }).catch(function () {}); });
+      }, Promise.resolve());
     });
   }
   document.querySelectorAll('button[data-biome]').forEach(function (b) {
