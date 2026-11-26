@@ -203,6 +203,32 @@
   }
 
   // ---------------------------------------------------------------- real scans
+  // Pick the walking circle with the least understory (0.4 to 3.5 m) along it, so the camera
+  // walks through open forest instead of brushing through shrubs.
+  function openPath(xs, ys, zs, flag, n, size) {
+    var g = Math.ceil(size), dens = new Float32Array(g * g);
+    for (var i = 0; i < n; i++) {
+      if (flag[i]) continue;
+      var h = zs[i] / 100;
+      if (h < 0.4 || h > 3.5) continue;
+      var cx = Math.min(g - 1, xs[i] / 100 | 0), cy = Math.min(g - 1, ys[i] / 100 | 0);
+      dens[cy * g + cx]++;
+    }
+    var best = 0.38 * size, bestCost = Infinity, half = size / 2;
+    for (var f = 0.12; f <= 0.42; f += 0.02) {
+      var r = f * size, cost = 0;
+      for (var k = 0; k < 96; k++) {
+        var a = k / 96 * 6.2831853, px = Math.cos(a) * r + half, pz = Math.sin(a) * r + half;
+        for (var dx = -1; dx <= 1; dx++) for (var dz = -1; dz <= 1; dz++) {
+          var gx = (px | 0) + dx, gz = (pz | 0) + dz;
+          if (gx >= 0 && gz >= 0 && gx < g && gz < g) cost += dens[gz * g + gx];
+        }
+      }
+      if (f > 0.3) cost *= 1 + (f - 0.3); // slight preference for staying inside the plot
+      if (cost < bestCost) { bestCost = cost; best = r; }
+    }
+    return best;
+  }
   // assets/hero/<key>.json + .bin, written by tools/make_hero_clouds.py from 3Dtrees.earth datasets.
   function loadReal(name) {
     var base = 'assets/hero/' + name;
@@ -232,7 +258,7 @@
           }
           col[j] = Math.min(1, c[0] * k); col[j + 1] = Math.min(1, c[1] * k); col[j + 2] = Math.min(1, c[2] * k);
         }
-        var v = meta.view || {}, r = (v.r || 0.38) * meta.size;
+        var v = meta.view || {}, r = v.r ? v.r * meta.size : openPath(xs, ys, zs, flag, n, meta.size);
         return { pos: pos, col: col, count: n, bg: B.bg, real: true, size: meta.size, dataset: meta.dataset, license: meta.license, credit: meta.credit,
           view: { r: r, turn: v.turn != null ? v.turn : 0.55, height: v.height || 1.7,
                   pitch: v.pitch != null ? v.pitch : Math.max(0.08, Math.min(0.32, Math.atan((0.3 * hi - 1.7) / r))) } };
