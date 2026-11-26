@@ -476,7 +476,7 @@
     gl.bindBuffer(gl.ARRAY_BUFFER, b.pos); gl.bufferSubData(gl.ARRAY_BUFFER, p.at * 8, p.d.pos.subarray(p.at * 4, end * 4));
     gl.bindBuffer(gl.ARRAY_BUFFER, b.col); gl.bufferSubData(gl.ARRAY_BUFFER, p.at * 4, p.d.col.subarray(p.at * 4, end * 4));
     p.at = end;
-    if (end >= n) { front = 1 - front; p.c.count = n; pending = null; settle = Math.max(settle, 0.5); }
+    if (end >= n) { front = 1 - front; p.c.reveal = { from: p.c.count, t0: performance.now() }; p.c.count = n; pending = null; settle = Math.max(settle, 2); }
     bindCloud();
   }
   function bindCloud() {
@@ -566,7 +566,18 @@
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
     renderScale = canvas.width / Math.max(1, canvas.clientWidth);
   }
-  function drawCount() { return cloud.real ? Math.round(cloud.count * pts) : cloud.count; }
+  // The full scan trickles in: the number of points drawn grows from the light scan's to all of them over
+  // 3 s, and the points shrink as they get denser (see thin), so detail fills in instead of popping.
+  function drawCount() {
+    if (!cloud.real) return cloud.count;
+    var n = Math.round(cloud.count * pts), rv = cloud.reveal;
+    if (rv) {
+      var k = Math.min(1, (performance.now() - rv.t0) / 3000), e = k * k * (3 - 2 * k);
+      n = Math.min(n, Math.round(rv.from + (cloud.count - rv.from) * e));
+      if (k >= 1) cloud.reveal = null;
+    }
+    return n;
+  }
   var fpsBox = /[?&]fps=1/.test(location.search) ? document.createElement('div') : null, fpsN = 0, fpsT = 0;
   if (fpsBox) { fpsBox.style.cssText = 'position:fixed;left:8px;top:64px;z-index:99;font:12px/1.3 monospace;color:#fff;background:rgba(0,0,0,.6);padding:4px 6px;border-radius:4px;pointer-events:none'; document.body.appendChild(fpsBox); }
   var fpsMax = 0, fpsPrev = 0;
