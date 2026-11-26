@@ -33,6 +33,7 @@
   function showTab(id, focus) {
     if (TABS.indexOf(id) < 0) id = 'project';
     current = id;
+    root.dataset.tab = id;
     document.querySelectorAll('[data-tab]').forEach(function (p) { p.hidden = p.dataset.tab !== id; });
     document.querySelectorAll('.tabs [data-tab-link]').forEach(function (a) {
       if (a.dataset.tabLink === id) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
