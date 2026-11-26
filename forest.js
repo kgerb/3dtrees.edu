@@ -9,7 +9,7 @@
 
   var GL_OPTS = { antialias: false, alpha: false, powerPreference: 'high-performance' };
   var gl = canvas.getContext('webgl2', GL_OPTS) || canvas.getContext('webgl', GL_OPTS); // WebGL2 lets the depth pass drop its depth buffer early
-  if (!gl) { hero.classList.add('no-webgl'); return; }
+  if (!gl) { hero.classList.add('no-webgl'); if (window.fvTrack) fvTrack('viewer_no_webgl', {}); return; }
 
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   // Phones and small tablets get the light scans. Not decided by window size: a laptop at 150 % scaling has a
@@ -496,7 +496,7 @@
     gl.bindBuffer(gl.ARRAY_BUFFER, b.pos); gl.bufferSubData(gl.ARRAY_BUFFER, p.at * 8, p.d.pos.subarray(p.at * 4, end * 4));
     gl.bindBuffer(gl.ARRAY_BUFFER, b.col); gl.bufferSubData(gl.ARRAY_BUFFER, p.at * 4, p.d.col.subarray(p.at * 4, end * 4));
     p.at = end;
-    if (end >= n) { front = 1 - front; p.c.reveal = { from: p.c.count, t0: performance.now() }; p.c.count = n; p.c.tiles = p.d.tiles; pending = null; settle = Math.max(settle, 2); }
+    if (end >= n) { front = 1 - front; p.c.reveal = { from: p.c.count, t0: performance.now() }; if (stat) stat.full = performance.now() - stat.t0; p.c.count = n; p.c.tiles = p.d.tiles; pending = null; settle = Math.max(settle, 2); }
     bindCloud();
   }
   function bindCloud() {
@@ -710,6 +710,7 @@
     var rawMs = t - last, dt = Math.min(0.05, rawMs / 1000 || 0); last = t;
     adapt(rawMs, Math.min(0.25, rawMs / 1000 || 0)); // real time, so a slow device is noticed quickly
     if (fpsBox) fpsTick(t);
+    statFrame(rawMs);
     camZ += speed * dt;
     fogFar += (fogTarget - fogFar) * Math.min(1, dt * 1.6);
     if (orient) {
@@ -740,13 +741,48 @@
   function start() { if (!running && visible && !document.hidden) { running = true; last = performance.now(); settle = 0.6; requestAnimationFrame(frame); } }
   function stop() { running = false; }
 
+  // ---------------------------------------------------------------- telemetry (analytics.js)
+  // One event per forest view, after 20 s of smooth-running time once loading is done (or when the visitor
+  // moves on): how the viewer runs on this device. Nothing leaves the page unless analytics.js has a key.
+  var stat = null, GPU = '';
+  try { var dbg = gl.getExtension('WEBGL_debug_renderer_info'); GPU = String(gl.getParameter(dbg ? dbg.UNMASKED_RENDERER_WEBGL : gl.RENDERER)); } catch (e) {}
+  function newStat(name, how) { return { forest: name, how: how, t0: performance.now(), n: 0, ms: 0, over25: 0, longest: 0, drawn: 0, hist: new Uint16Array(101), hidden: false, sent: false, light: null, full: null }; }
+  function statFrame(ms) {
+    if (!stat || stat.sent || !cloud || !cloud.real || pending || cloud.reveal || inFlight) return; // loading frames are not counted
+    if (ms > 1000) { stat.hidden = true; return; } // a hidden tab or a stall: flagged, not averaged
+    stat.n++; stat.ms += ms; stat.drawn += lastDrawn; if (ms > 25) stat.over25++; if (ms > stat.longest) stat.longest = ms;
+    stat.hist[Math.min(100, ms | 0)]++;
+    if (stat.ms > 20000) sendStat();
+  }
+  function pct(h, n, q) { for (var i = 0, a = 0; i < h.length; i++) { a += h[i]; if (a >= n * q) return i; } return 100; }
+  function sendStat() {
+    if (!stat || stat.sent || stat.n < 60 || !window.fvTrack) return;
+    stat.sent = true;
+    fvTrack('viewer_performance', {
+      forest: stat.forest, switched_by: stat.how, seconds: Math.round(stat.ms / 1000),
+      fps: Math.round(stat.n * 10000 / stat.ms) / 10, frame_ms_p50: pct(stat.hist, stat.n, 0.5), frame_ms_p95: pct(stat.hist, stat.n, 0.95),
+      longest_ms: Math.round(stat.longest), late_pct: Math.round(stat.over25 * 1000 / stat.n) / 10, hidden_during: stat.hidden,
+      load_light_ms: stat.light == null ? null : Math.round(stat.light), load_full_ms: stat.full == null ? null : Math.round(stat.full),
+      points_loaded: cloud ? cloud.count : null, points_drawn: Math.round(stat.drawn / stat.n),
+      budget: isFinite(budget) ? Math.round(budget) : 'none', normal_late_pct: Math.round(noise * 100), resolution_level: resLevel,
+      canvas: canvas.width + 'x' + canvas.height, viewport: innerWidth + 'x' + innerHeight, dpr: window.devicePixelRatio || 1,
+      gpu: GPU, webgl2: typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext,
+      worker: !!worker, small_device: small, vr: stereo, depth_effect: !!(edl && EDL_STRENGTH > 0), culling: CULL, cores: navigator.hardwareConcurrency || null,
+      memory_gb: navigator.deviceMemory || null
+    });
+  }
+  addEventListener('pagehide', sendStat);
+  document.addEventListener('visibilitychange', function () { if (document.hidden) { if (stat) stat.hidden = true; sendStat(); } });
+
   // ---------------------------------------------------------------- biome switch
-  function setBiome(name) {
+  function setBiome(name, how) {
+    sendStat(); stat = newStat(name, how || 'start');
     if (!biome(name)) return;
     current = name;
     var token = ++loadToken;
     loadReal(name).catch(function () { return generate(name); }).then(function (c) {
       if (token !== loadToken) return;
+      if (stat && stat.forest === name) stat.light = performance.now() - stat.t0;
       upload(c); settle = 2; idleSince = performance.now(); // the first frames after a new scan include buffer uploads
       if (c.real && c.full > c.count && budget > c.count * 0.9) loadDetail(name, c).then(function (d) { if (token === loadToken) { uploadDetail(c, d); prefetchOthers(); } }, function () {});
       else prefetchOthers();
@@ -785,7 +821,7 @@
   }
   document.querySelectorAll('button[data-biome]').forEach(function (b) {
     b.addEventListener('click', function () {
-      setBiome(b.dataset.biome);
+      setBiome(b.dataset.biome, 'click');
       if (b.dataset.scrollHero !== undefined) hero.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
     });
   });
@@ -803,7 +839,7 @@
     if (performance.now() - idleSince < IDLE_MS) return;
     var keys = [];
     document.querySelectorAll('button[data-biome]').forEach(function (b) { if (keys.indexOf(b.dataset.biome) < 0) keys.push(b.dataset.biome); });
-    if (keys.length > 1) setBiome(keys[(keys.indexOf(current) + 1) % keys.length]);
+    if (keys.length > 1) setBiome(keys[(keys.indexOf(current) + 1) % keys.length], 'auto');
     poke();
   }, 500);
 
@@ -838,7 +874,7 @@
   }
   var vrBtn = document.getElementById('vr-enter'), vrExit = document.getElementById('vr-exit');
   function enterVR() {
-    stereo = true; hero.classList.add('vr');
+    stereo = true; hero.classList.add('vr'); if (window.fvTrack) fvTrack('vr_enter', { forest: current });
     document.body.classList.add('vr-lock');
     var go = function () { orient0 = null; window.addEventListener('deviceorientation', onOrient); };
     if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
