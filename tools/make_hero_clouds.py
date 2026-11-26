@@ -87,8 +87,11 @@ def main():
     for lod, budget in (("hi", a.hi), ("lo", a.lo)):
         vox = 0.02
         while True:  # random point per voxel, growing the voxel until the budget fits
-            k = np.stack([np.floor((x - cx) / vox), np.floor((y - cy) / vox), np.floor(hag / vox)], 1).astype(np.int64)
-            _, first = np.unique(k, axis=0, return_index=True)
+            # one int64 key per voxel (21 bits per axis) instead of np.unique(axis=0), which is ~50x slower
+            ix = np.floor((x - cx) / vox).astype(np.int64) + (1 << 20)
+            iy = np.floor((y - cy) / vox).astype(np.int64) + (1 << 20)
+            iz = np.floor(hag / vox).astype(np.int64)
+            _, first = np.unique((ix << 42) | (iy << 21) | iz, return_index=True)
             if len(first) <= budget:
                 break
             vox *= 1.1
