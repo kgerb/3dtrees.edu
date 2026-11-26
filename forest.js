@@ -213,7 +213,7 @@
   // assets/hero/<key>.json + .lo.bin (250k points) + .hi.bin (2M), written by tools/make_hero_clouds.py on geos.
   // File layout: uint16 x, y, z in cm (each a block of n), then n uint8 ground flags; points in random order.
   // Each scan appears from the light file first; on desktops the full file follows and replaces it.
-  var ASSET_V = '20261126-4'; // bump when assets/hero files change, so browsers don't keep old ones
+  var ASSET_V = '20261126-5'; // bump when assets/hero files change, so browsers don't keep old ones
 
   // Self-contained (also runs as a Web Worker): turns a file into GPU-ready arrays.
   // pos: uint16 x, height, y, 0 per point (cm); col: rgba bytes. Optionally picks the walking path.
@@ -285,6 +285,25 @@
           if (cost < bestCost) { bestCost = cost; best = { r: rad, h: H }; }
         }
       }
+      // Start angle: the spot on the circle with the least clutter close to the camera and in the first
+      // ten metres of the view (looking along the path, turned 0.55 rad towards the centre), so a scan
+      // never opens inside a shrub or a wall of understory leaves.
+      var bestA = 0, bestAC = Infinity, zTop = Math.min(nz - 1, 4);
+      for (var qa = 0; qa < 72; qa++) {
+        var a = qa / 72 * 6.2831853, ex = Math.cos(a) * best.r + half, ez = Math.sin(a) * best.r + half;
+        var yw0 = Math.atan2(-Math.sin(a), Math.cos(a)) - 0.55, ac = 0;
+        for (var ray = -2; ray <= 2; ray++) {
+          var yr = yw0 + ray * 0.25, sx = Math.sin(yr), sz = Math.cos(yr);
+          for (var dd = 0.5; dd <= 10; dd += 0.5) {
+            var cx = (ex + sx * dd) | 0, cz = (ez + sz * dd) | 0;
+            if (cx < 0 || cz < 0 || cx >= gsz || cz >= gsz) continue;
+            var w = dd < 3 ? 3 : 1; // what is right in front of the eye matters most
+            for (var zz2 = 0; zz2 <= zTop; zz2++) ac += w * dens[(zz2 * gsz + cz) * gsz + cx];
+          }
+        }
+        if (ac < bestAC) { bestAC = ac; bestA = a; }
+      }
+      best.a0 = bestA;
       out.path = best;
     }
     return out;
@@ -336,7 +355,7 @@
         var r = v.r ? v.r * meta.size : d.path.r, eyeH = v.height || (d.path ? d.path.h : 1.7);
         return { pos: d.pos, col: d.col, tiles: d.tiles, count: d.n, full: !small && meta.hi ? meta.hi.n : d.n, bg: B.bg, real: true, half: meta.size / 2,
           size: meta.size, dataset: meta.dataset, license: meta.license, credit: meta.credit, meta: meta, range: [d.lo, d.hi],
-          view: { r: r, turn: v.turn != null ? v.turn : 0.55, height: eyeH,
+          view: { r: r, a0: v.a0 != null ? v.a0 : (d.path ? d.path.a0 || 0 : 0), turn: v.turn != null ? v.turn : 0.55, height: eyeH,
                   pitch: v.pitch != null ? v.pitch : Math.max(0.04, Math.min(0.32, Math.atan((0.3 * d.hi - eyeH) / r))) } };
       });
     });
@@ -685,7 +704,7 @@
     var bob = reduceMotion ? 0 : Math.sin(camZ * 1.9) * 0.025;
     var eye, yw = yaw;
     if (cloud.real) {
-      var V = cloud.view, r = V.r, th = camZ / r;
+      var V = cloud.view, r = V.r, th = (V.a0 || 0) + camZ / r;
       eye = [Math.cos(th) * r, V.height + bob, Math.sin(th) * r];
       yw = Math.atan2(-Math.sin(th), Math.cos(th)) + yaw - V.turn; // along the path around the plot, turned towards its centre
     } else {
