@@ -7,7 +7,8 @@
   var canvas = document.getElementById('forest-canvas');
   if (!hero || !canvas) return;
 
-  var GL_OPTS = { antialias: false, alpha: false, powerPreference: 'high-performance' };
+  // preserveDrawingBuffer only when session replay records the canvas (analytics.js): replays then show the forest
+  var GL_OPTS = { antialias: false, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: !!window.FV_CANVAS_REPLAY };
   var gl = canvas.getContext('webgl2', GL_OPTS) || canvas.getContext('webgl', GL_OPTS); // WebGL2 lets the depth pass drop its depth buffer early
   if (!gl) { hero.classList.add('no-webgl'); if (window.fvTrack) fvTrack('viewer_no_webgl', {}); return; }
 
