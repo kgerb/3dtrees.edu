@@ -241,12 +241,13 @@
     return best;
   }
   // assets/hero/<key>.json + .bin, written by tools/make_hero_clouds.py from 3Dtrees.earth datasets.
+  var ASSET_V = '20261126-3'; // bump when assets/hero files change, so browsers don't keep old ones
   function loadReal(name) {
     var base = 'assets/hero/' + name;
-    return fetch(base + '.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (meta) {
+    return fetch(base + '.json?v=' + ASSET_V).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (meta) {
       var lod = small || !meta.hi ? 'lo' : 'hi';
       // .bin on the website; the claude.ai preview only serves web file types, so it gets the same bytes as .wasm
-      function get(ext) { return fetch(base + '.' + lod + ext).then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); }); }
+      function get(ext) { return fetch(base + '.' + lod + ext + '?v=' + ASSET_V).then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); }); }
       return get('.bin').catch(function () { return get('.wasm'); }).then(function (buf) {
         var n = meta[lod].n, xs = new Uint16Array(buf, 0, n), ys = new Uint16Array(buf, n * 2, n), zs = new Uint16Array(buf, n * 4, n);
         var flag = new Uint8Array(buf, n * 6, n);
