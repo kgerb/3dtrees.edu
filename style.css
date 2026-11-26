@@ -235,5 +235,3 @@ figure.concept figcaption{padding:0 8px 6px}
 .soon-grid li{border:1px dashed var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:10px;align-items:flex-start;color:var(--muted)}
 .soon-grid h3{color:var(--muted);font-weight:600}
 .soon-tag{display:inline-block;font-size:.68rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--sun-soft);color:var(--fg);white-space:nowrap}
-.tab-soon{padding:8px 10px;color:var(--muted);font-weight:500;font-size:.95rem;display:flex;align-items:center;gap:6px;min-height:40px;opacity:.8;cursor:default}
-@media (max-width:640px){.tab-soon{font-size:.85rem;padding:8px 4px}.tab-soon .soon-tag{font-size:.6rem;padding:2px 6px}}

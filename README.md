@@ -6,10 +6,10 @@ Plain HTML, CSS and JavaScript. No build step: edit and push.
 
 ## Files
 
-- `index.html`: all content. Two tabs (`#project`, `#about`). The Projekt tab is the 3D viewer plus a "Coming soon" list (`.soon-grid`); News shows as a disabled "Coming soon" item in the nav. The earlier sections (idea, data path, gallery, News blog) are kept under the git tag `before-strip-down`.
+- `index.html`: all content. Three tabs (`#project`, `#news`, `#about`). The Projekt tab is the 3D viewer plus a "Coming soon" list (`.soon-grid`). New blog posts go at the top of `.posts` in the News tab, one `<article class="post">` each. The earlier Projekt sections (idea, data path, gallery) are in the git history before commit 63c809f.
 - `style.css`: layout and colours (light and dark mode).
 - `site.js`: tab switching, the DE/EN switch and scroll reveals.
-- `forest.js`: the full-screen point-cloud forest on the Project tab (plain WebGL, no libraries). The four forest types and their tree mixes are in `BIOMES`. It shows real 3Dtrees.earth scans from `assets/hero/<key>.bin` when they exist and falls back to a generated illustration otherwise. Make those files with `python tools/make_hero_clouds.py crop.laz black-forest` (writes a dense `.hi.bin` for desktops and a light `.lo.bin` for phones) (keys: black-forest, boreal, congo, borneo; needs `pip install laspy lazrs numpy`). "Mit Cardboard-Brille ansehen" switches to side-by-side stereo and steers with the phone's motion sensors.
+- `forest.js`: the full-screen point-cloud forest on the Project tab (plain WebGL, no libraries). The five forest types and their tree mixes are in `BIOMES`. It shows real 3Dtrees.earth scans from `assets/hero/<key>.bin` when they exist and falls back to a generated illustration otherwise. Make those files with `python tools/make_hero_clouds.py crop.laz black-forest` (writes a dense `.hi.bin` for desktops and a light `.lo.bin` for phones) (keys: black-forest, boreal, congo, borneo, australia; needs `pip install laspy lazrs numpy`). "Mit Cardboard-Brille ansehen" switches to side-by-side stereo and steers with the phone's motion sensors.
 - `assets/figure/`: the concept figure, wide and mobile versions per language.
 - `assets/examples/`: gallery images (see below).
 - `assets/people/`: profile photos (optional).

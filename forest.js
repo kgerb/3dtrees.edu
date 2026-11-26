@@ -20,7 +20,7 @@
   function gauss() { var u = rnd() || 1e-9, v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.2831853 * v); }
 
   // ---------------------------------------------------------------- biomes
-  // Heights in metres. Numbers are rough, chosen to make the four forests look different.
+  // Heights in metres. Numbers are rough, chosen to make the five forests look different.
   var VIRIDIS = [[0.2, 0.46, 0.52], [0.18, 0.72, 0.48], [1.0, 0.92, 0.2]];
   var BG = [0.035, 0.045, 0.07];
   var BIOMES = {
@@ -62,6 +62,16 @@
         { w: 0.5, kind: 'broadleaf', h: [22, 38], crown: [0.3, 0.5], r: [3, 6.5] },
         { w: 0.3, kind: 'broadleaf', h: [8, 16], crown: [0.5, 0.7], r: [2, 3.5] },
         { w: 0.5, kind: 'shrub', h: [1.5, 6], crown: [0.6, 0.9], r: [0.8, 2.2] }
+      ]
+    },
+    'australia': {
+      bg: BG, stems: 120, budget: 0.9,
+      ground: [[0.5, 0.42, 0.24], [0.42, 0.4, 0.2]],
+      leaf: VIRIDIS,
+      mix: [
+        { w: 0.55, kind: 'broadleaf', h: [28, 45], crown: [0.3, 0.45], r: [4, 7] },
+        { w: 0.25, kind: 'broadleaf', h: [10, 18], crown: [0.4, 0.6], r: [2, 3.5] },
+        { w: 0.4, kind: 'shrub', h: [0.6, 2.5], crown: [0.8, 1], r: [0.6, 1.6] }
       ]
     }
   };
@@ -208,7 +218,7 @@
           }
           col[j] = Math.min(1, c[0] * k); col[j + 1] = Math.min(1, c[1] * k); col[j + 2] = Math.min(1, c[2] * k);
         }
-        return { pos: pos, col: col, count: n, bg: B.bg, real: true, size: meta.size };
+        return { pos: pos, col: col, count: n, bg: B.bg, real: true, size: meta.size, dataset: meta.dataset, license: meta.license };
       });
     });
   }
@@ -288,7 +298,7 @@
   var stereo = false, orient = null, orient0 = null;
   var visible = true, running = false, last = 0;
   var current = 'black-forest', loadToken = 0;
-  var DATASETS = { 'black-forest': '2909', 'boreal': '1069', 'congo': '3140', 'borneo': '1477' };
+  var DATASETS = { 'black-forest': '2909', 'boreal': '1069', 'congo': '3140', 'borneo': '1477', 'australia': '1875' };
 
   function resize() {
     var dpr = Math.min(window.devicePixelRatio || 1, small ? 1.5 : 2);
@@ -359,9 +369,10 @@
       fogTarget = c.real ? Math.max(60, c.size * 0.9) : 120;
       hero.classList.toggle('is-real', !!c.real);
       document.querySelectorAll('[data-hero-dataset]').forEach(function (el) {
-        var id = DATASETS[name] || '';
+        var id = c.dataset || DATASETS[name] || '';
         if (el.tagName === 'A') el.href = 'https://3dtrees.earth/datasets/' + id; else el.textContent = id;
       });
+      document.querySelectorAll('[data-hero-license]').forEach(function (el) { el.textContent = c.license || 'CC BY 4.0'; });
       hero.classList.add('ready');
       start();
     });
