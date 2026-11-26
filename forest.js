@@ -23,6 +23,13 @@
   // Heights in metres. Numbers are rough, chosen to make the five forests look different.
   var VIRIDIS = [[0.2, 0.46, 0.52], [0.18, 0.72, 0.48], [1.0, 0.92, 0.2]];
   var BG = [0.035, 0.045, 0.07];
+  // viridis from blue to yellow (the darkest purple is left out so the lowest leaves stay visible on the dark sky)
+  var SCAN_RAMP = [[0.23, 0.32, 0.55], [0.13, 0.57, 0.55], [0.37, 0.79, 0.38], [0.99, 0.91, 0.15]];
+  function ramp(stops, t) {
+    t = Math.max(0, Math.min(1, t)) * (stops.length - 1);
+    var i = Math.min(stops.length - 2, Math.floor(t)), u = t - i, a = stops[i], b = stops[i + 1];
+    return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u];
+  }
   var BIOMES = {
     'black-forest': {
       bg: BG, stems: 150, budget: 1.0,
@@ -86,7 +93,7 @@
 
   // ---------------------------------------------------------------- generation
   function generate(name) {
-    var B = BIOMES[name];
+    var B = biome(name);
     seed = 4242 + name.length * 977;
     var maxPts = Math.round((small ? 90000 : 190000) * B.budget);
     var pos = new Float32Array(maxPts * 3), col = new Float32Array(maxPts * 3);
@@ -196,15 +203,60 @@
   }
 
   // ---------------------------------------------------------------- real scans
+  // Pick the walking circle and eye height with the least vegetation around the camera, so it walks
+  // through open forest instead of brushing through shrubs. Eye level (1.7 m) is preferred; in dense
+  // forests the camera rises into a sparser layer between the understory and the crowns.
+  function openPath(xs, ys, zs, flag, n, size, top) {
+    var g = Math.ceil(size), maxH = Math.max(3, Math.min(30, Math.floor(0.5 * top))), nz = maxH + 3;
+    var dens = new Float32Array(g * g * nz);
+    for (var i = 0; i < n; i++) {
+      if (flag[i]) continue;
+      var hz = zs[i] / 100 | 0;
+      if (hz >= nz) continue;
+      var cx = Math.min(g - 1, xs[i] / 100 | 0), cy = Math.min(g - 1, ys[i] / 100 | 0);
+      dens[(hz * g + cy) * g + cx]++;
+    }
+    var heights = [1.7];
+    for (var hh = 3; hh <= maxH; hh++) heights.push(hh);
+    var best = { r: 0.38 * size, h: 1.7 }, bestCost = Infinity, half = size / 2;
+    for (var f = 0.12; f <= 0.42; f += 0.02) {
+      var r = f * size;
+      for (var hi = 0; hi < heights.length; hi++) {
+        var H = heights[hi], z0 = Math.max(0, Math.round(H - 1.5)), z1 = Math.min(nz - 1, Math.round(H + 1.5)), cost = 0;
+        if (H < 2) z0 = 0; // at eye level count from just above the ground: 0.4 m shrubs block the view too
+        for (var k = 0; k < 96; k++) {
+          var a = k / 96 * 6.2831853, px = Math.cos(a) * r + half, pz = Math.sin(a) * r + half;
+          for (var dx = -1; dx <= 1; dx++) for (var dz = -1; dz <= 1; dz++) {
+            var gx = (px | 0) + dx, gz = (pz | 0) + dz;
+            if (gx < 0 || gz < 0 || gx >= g || gz >= g) continue;
+            for (var z = z0; z <= z1; z++) cost += dens[(z * g + gz) * g + gx];
+          }
+        }
+        cost /= (z1 - z0 + 1);
+        if (f > 0.3) cost *= 1 + (f - 0.3); // slight preference for staying inside the plot
+        cost *= 1 + 0.03 * (H - 1.7); // and for eye level, unless higher up is clearly more open
+        if (cost < bestCost) { bestCost = cost; best = { r: r, h: H }; }
+      }
+    }
+    return best;
+  }
   // assets/hero/<key>.json + .bin, written by tools/make_hero_clouds.py from 3Dtrees.earth datasets.
   function loadReal(name) {
     var base = 'assets/hero/' + name;
     return fetch(base + '.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (meta) {
       var lod = small || !meta.hi ? 'lo' : 'hi';
-      return fetch(base + '.' + lod + '.bin').then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); }).then(function (buf) {
+      // .bin on the website; the claude.ai preview only serves web file types, so it gets the same bytes as .wasm
+      function get(ext) { return fetch(base + '.' + lod + ext).then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); }); }
+      return get('.bin').catch(function () { return get('.wasm'); }).then(function (buf) {
         var n = meta[lod].n, xs = new Uint16Array(buf, 0, n), ys = new Uint16Array(buf, n * 2, n), zs = new Uint16Array(buf, n * 4, n);
         var flag = new Uint8Array(buf, n * 6, n);
-        var B = BIOMES[name], half = meta.size / 2, zmax = meta.zmax || 30;
+        var B = biome(name), half = meta.size / 2;
+        // colour range: 2nd to 98th percentile of vegetation height in this scan, so every scan uses the whole ramp
+        var hs = [];
+        for (var q = 0; q < n; q += Math.max(1, Math.floor(n / 20000))) if (!flag[q]) hs.push(zs[q] / 100);
+        hs.sort(function (a, b) { return a - b; });
+        var lo = hs.length ? hs[Math.floor(hs.length * 0.02)] : 0, hi = hs.length ? hs[Math.floor(hs.length * 0.98)] : (meta.zmax || 30);
+        if (hi - lo < 1) hi = lo + 1;
         var pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
         seed = 99;
         for (var i = 0; i < n; i++) {
@@ -213,12 +265,15 @@
           var c, k = 0.85 + 0.3 * rnd();
           if (flag[i]) { c = B.ground[i & 1]; k *= 1.6; }
           else {
-            var t = Math.min(1, h / zmax), a = t < 0.5 ? VIRIDIS[0] : VIRIDIS[1], b2 = t < 0.5 ? VIRIDIS[1] : VIRIDIS[2], u = t < 0.5 ? t * 2 : (t - 0.5) * 2;
-            c = [a[0] + (b2[0] - a[0]) * u, a[1] + (b2[1] - a[1]) * u, a[2] + (b2[2] - a[2]) * u];
+            c = ramp(SCAN_RAMP, (h - lo) / (hi - lo));
           }
           col[j] = Math.min(1, c[0] * k); col[j + 1] = Math.min(1, c[1] * k); col[j + 2] = Math.min(1, c[2] * k);
         }
-        return { pos: pos, col: col, count: n, bg: B.bg, real: true, size: meta.size, dataset: meta.dataset, license: meta.license };
+        var v = meta.view || {}, op = v.r && v.height ? null : openPath(xs, ys, zs, flag, n, meta.size, hi);
+        var r = v.r ? v.r * meta.size : op.r, eyeH = v.height || (op ? op.h : 1.7);
+        return { pos: pos, col: col, count: n, bg: B.bg, real: true, size: meta.size, dataset: meta.dataset, license: meta.license, credit: meta.credit,
+          view: { r: r, turn: v.turn != null ? v.turn : 0.55, height: eyeH,
+                  pitch: v.pitch != null ? v.pitch : Math.max(0.04, Math.min(0.32, Math.atan((0.3 * hi - eyeH) / r))) } };
       });
     });
   }
@@ -226,7 +281,7 @@
   // ---------------------------------------------------------------- GL setup
   var VS = [
     'attribute vec3 aPos; attribute vec3 aCol;',
-    'uniform mat4 uView; uniform mat4 uProj; uniform float uCamZ; uniform float uL; uniform float uFocal; uniform float uSize;',
+    'uniform mat4 uView; uniform mat4 uProj; uniform float uCamZ; uniform float uL; uniform float uFocal; uniform float uSize; uniform float uMaxPx; uniform float uNear;',
     'varying vec3 vCol; varying float vDepth;',
     'void main(){',
     '  vec3 p = aPos;',
@@ -234,7 +289,8 @@
     '  vec4 v = uView * vec4(p, 1.0);',
     '  gl_Position = uProj * v;',
     '  float d = max(0.1, -v.z);',
-    '  gl_PointSize = clamp(uSize * uFocal / d, 1.5, 10.0);',
+    '  gl_PointSize = clamp(uSize * uFocal / d, 1.5, uMaxPx);',
+    '  if (d < uNear) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);', // hide leaves brushing the camera
     '  vCol = aCol; vDepth = d;',
     '}'
   ].join('\n');
@@ -257,7 +313,7 @@
   if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { hero.classList.add('no-webgl'); return; }
   gl.useProgram(prog);
   var U = {};
-  ['uView', 'uProj', 'uCamZ', 'uL', 'uFocal', 'uSize', 'uBg', 'uFogFar'].forEach(function (k) { U[k] = gl.getUniformLocation(prog, k); });
+  ['uView', 'uProj', 'uCamZ', 'uL', 'uFocal', 'uSize', 'uMaxPx', 'uNear', 'uBg', 'uFogFar'].forEach(function (k) { U[k] = gl.getUniformLocation(prog, k); });
   var aPos = gl.getAttribLocation(prog, 'aPos'), aCol = gl.getAttribLocation(prog, 'aCol');
   var bufPos = gl.createBuffer(), bufCol = gl.createBuffer();
   gl.enable(gl.DEPTH_TEST);
@@ -292,13 +348,19 @@
 
   // ---------------------------------------------------------------- state
   var FOV = 70 * Math.PI / 180;
-  var camZ = 0, speed = reduceMotion ? 0 : 1.25; // m/s, a slow walk
-  var yaw = 0, pitch = 0.06, tYaw = 0, tPitch = 0.06, dragYaw = 0, dragPitch = 0;
+  var camZ = 0, speed = reduceMotion ? 0 : 0.5; // m/s, a slow stroll
+  var yaw = 0, pitch = 0.06, tYaw = 0, tPitch = 0.06, basePitch = 0.06, dragYaw = 0, dragPitch = 0;
   var fogFar = 0, fogTarget = 120;
   var stereo = false, orient = null, orient0 = null;
   var visible = true, running = false, last = 0;
   var current = 'black-forest', loadToken = 0;
-  var DATASETS = { 'black-forest': '2909', 'boreal': '1069', 'congo': '3140', 'borneo': '1477', 'australia': '1875' };
+  var DATASETS = { 'black-forest': '2909', 'boreal': '1069', 'congo': '3140', 'borneo': '1477', 'australia': '1875', 'gabon': '1481' };
+  // extra scans can borrow a palette: <button data-biome="my-scan" data-palette="congo">
+  function biome(name) {
+    if (BIOMES[name]) return BIOMES[name];
+    var b = document.querySelector('button[data-biome="' + name + '"]');
+    return b && BIOMES[b.dataset.palette];
+  }
 
   function resize() {
     var dpr = Math.min(window.devicePixelRatio || 1, small ? 1.5 : 2);
@@ -311,9 +373,9 @@
     var bob = reduceMotion ? 0 : Math.sin(camZ * 1.9) * 0.025;
     var eye, yw = yaw;
     if (cloud.real) {
-      var r = cloud.size * 0.3, th = camZ / r;
-      eye = [Math.cos(th) * r, 1.7 + bob, Math.sin(th) * r];
-      yw = Math.atan2(-Math.sin(th), Math.cos(th)) + yaw - 0.35; // along the path, turned slightly towards the plot centre
+      var V = cloud.view, r = V.r, th = camZ / r;
+      eye = [Math.cos(th) * r, V.height + bob, Math.sin(th) * r];
+      yw = Math.atan2(-Math.sin(th), Math.cos(th)) + yaw - V.turn; // along the path around the plot, turned towards its centre
     } else {
       eye = [Math.sin(camZ * 0.05) * 0.6, 1.7 + bob + terrain(0, camZ), 0];
     }
@@ -346,7 +408,8 @@
     gl.clearColor(bg[0], bg[1], bg[2], 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     if (cloud.real) { gl.uniform1f(U.uCamZ, 0); gl.uniform1f(U.uL, 100000); } else { gl.uniform1f(U.uCamZ, camZ); gl.uniform1f(U.uL, L); }
-    gl.uniform1f(U.uSize, small ? 0.11 : 0.13);
+    if (cloud.real) { gl.uniform1f(U.uSize, small ? 0.08 : 0.07); gl.uniform1f(U.uMaxPx, small ? 4.0 : 5.0); gl.uniform1f(U.uNear, 2.2); }
+    else { gl.uniform1f(U.uSize, small ? 0.11 : 0.13); gl.uniform1f(U.uMaxPx, 10.0); gl.uniform1f(U.uNear, 0.0); }
     gl.uniform3fv(U.uBg, bg); gl.uniform1f(U.uFogFar, fogFar);
     var W2 = canvas.width, H2 = canvas.height;
     if (stereo) { drawEye(0, W2 / 2, H2, -0.032); drawEye(W2 / 2, W2 / 2, H2, 0.032); }
@@ -359,12 +422,14 @@
 
   // ---------------------------------------------------------------- biome switch
   function setBiome(name) {
-    if (!BIOMES[name]) return;
+    if (!biome(name)) return;
     current = name;
     var token = ++loadToken;
     loadReal(name).catch(function () { return generate(name); }).then(function (c) {
       if (token !== loadToken) return;
       upload(c);
+      camZ = 0; // every scan starts at its chosen viewpoint
+      basePitch = c.real ? c.view.pitch : 0.06; tPitch = basePitch; tYaw = 0; dragYaw = 0; dragPitch = 0;
       fogFar = 2; // forest emerges from the fog
       fogTarget = c.real ? Math.max(60, c.size * 0.9) : 120;
       hero.classList.toggle('is-real', !!c.real);
@@ -373,6 +438,7 @@
         if (el.tagName === 'A') el.href = 'https://3dtrees.earth/datasets/' + id; else el.textContent = id;
       });
       document.querySelectorAll('[data-hero-license]').forEach(function (el) { el.textContent = c.license || 'CC BY 4.0'; });
+      document.querySelectorAll('[data-hero-credit]').forEach(function (el) { el.textContent = c.credit ? c.credit + ', ' : ''; });
       hero.classList.add('ready');
       start();
     });
@@ -394,7 +460,7 @@
     if (e.pointerType === 'mouse' && !dragging) {
       var r = hero.getBoundingClientRect();
       tYaw = -((e.clientX - r.left) / r.width - 0.5) * 0.6;
-      tPitch = 0.06 - ((e.clientY - r.top) / r.height - 0.5) * 0.3;
+      tPitch = basePitch - ((e.clientY - r.top) / r.height - 0.5) * 0.3;
     }
     if (dragging) {
       dragYaw = y0 + (e.clientX - dx0) * 0.004;

@@ -25,7 +25,7 @@
   // ---- Tabs ----
   var TITLES = {
     de: { project: 'ForestVerse – Jeder Wald, nur ein Klick entfernt', news: 'News · ForestVerse', about: 'Über uns · ForestVerse' },
-    en: { project: 'ForestVerse – Every forest, just one click away', news: 'News · ForestVerse', about: 'About · ForestVerse' }
+    en: { project: 'ForestVerse – Every forest, just one click away', news: 'News · ForestVerse', about: 'About us · ForestVerse' }
   };
   var current = 'project';
   function setTitle() { document.title = TITLES[root.lang === 'en' ? 'en' : 'de'][current]; }
@@ -68,4 +68,15 @@
     es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
   }, { rootMargin: '0px 0px -8% 0px' });
   els.forEach(function (e) { io.observe(e); });
+})();
+
+// Phones: the scan credit sits behind an info button on the landing page.
+(function () {
+  var btn = document.querySelector('.scan-info');
+  if (!btn) return;
+  btn.addEventListener('click', function () {
+    var open = btn.getAttribute('aria-expanded') !== 'true';
+    btn.setAttribute('aria-expanded', String(open));
+    btn.parentNode.classList.toggle('info-open', open);
+  });
 })();

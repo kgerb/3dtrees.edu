@@ -29,7 +29,7 @@
     <nav class="tabs" aria-label="Hauptnavigation">
       <a href="#project" data-tab-link="project"><span lang="de">Projekt</span><span lang="en">Project</span></a>
       <a href="#news" data-tab-link="news">News</a>
-      <a href="#about" data-tab-link="about"><span lang="de">Über uns</span><span lang="en">About</span></a>
+      <a href="#about" data-tab-link="about"><span lang="de">Über uns</span><span lang="en">About us</span></a>
     </nav>
     <div class="lang-switch" role="group" aria-label="Sprache / Language">
       <button type="button" data-set-lang="de" aria-label="Deutsch">DE</button>
@@ -46,38 +46,43 @@
     <canvas id="forest-canvas" aria-hidden="true"></canvas>
     <div class="immersive-shade" aria-hidden="true"></div>
     <div class="immersive-content">
-      <span class="eyebrow">
-        <span lang="de">Hochschulwettbewerb 2027 · Wissenschaftsjahr Raumfahrt · Universität Freiburg</span>
-        <span lang="en">University Competition 2027 · Science Year: Space · University of Freiburg</span>
-      </span>
-      <h1 id="hero-title">ForestVerse</h1>
-      <p class="tagline">
-        <span lang="de">Jeder Wald, nur ein Klick entfernt.</span>
-        <span lang="en">Every forest, just one click away.</span>
-      </p>
-      <blockquote class="motto">
-        <p lang="de">„Wir schützen nur, was wir lieben.“</p>
-        <p lang="en">“We only protect what we love.”</p>
-        <cite>Baba Dioum</cite>
-      </blockquote>
-      <div class="travel" role="group" aria-labelledby="travel-label">
-        <span id="travel-label" class="travel-label"><span lang="de">Reise in den Wald:</span><span lang="en">Travel to a forest:</span></span>
-        <button type="button" data-biome="black-forest"><span lang="de">Schwarzwald</span><span lang="en">Black Forest</span></button>
-        <button type="button" data-biome="boreal"><span lang="de">Finnland</span><span lang="en">Finland</span></button>
-        <button type="button" data-biome="congo"><span lang="de">Kamerun</span><span lang="en">Cameroon</span></button>
-        <button type="button" data-biome="borneo">Borneo</button>
-        <button type="button" data-biome="australia"><span lang="de">Australien</span><span lang="en">Australia</span></button>
+      <div class="hero-row">
+        <div class="hero-title">
+          <div class="title-lockup">
+            <h1 id="hero-title">ForestVerse</h1>
+            <a class="supported-by" href="https://3dtrees.earth"><span lang="de">Unterstützt von</span><span lang="en">Supported by</span> <img src="assets/3dtrees-logo.png" alt="" width="32" height="32"> <strong>3Dtrees.earth</strong></a>
+          </div>
+          <p class="tagline">
+            <span lang="de">Jeder Wald, nur ein Klick entfernt.</span>
+            <span lang="en">Every forest, just one click away.</span>
+          </p>
+          <blockquote class="motto">
+            <p lang="de">„Wir schützen nur, was wir lieben.“</p>
+            <p lang="en">“We only protect what we love.”</p>
+            <cite>Baba Dioum</cite>
+          </blockquote>
+        </div>
+        <div class="travel" role="group" aria-labelledby="travel-label">
+          <span id="travel-label" class="sr-only"><span lang="de">Reise in den Wald:</span><span lang="en">Travel to a forest:</span></span>
+          <button type="button" data-biome="black-forest"><span lang="de">Schwarzwald</span><span lang="en">Black Forest</span></button>
+          <button type="button" data-biome="boreal"><span lang="de">Finnland</span><span lang="en">Finland</span></button>
+          <button type="button" data-biome="congo"><span lang="de">Kamerun</span><span lang="en">Cameroon</span></button>
+          <button type="button" data-biome="gabon" data-palette="congo"><span lang="de">Gabun</span><span lang="en">Gabon</span></button>
+          <button type="button" data-biome="australia"><span lang="de">Australien</span><span lang="en">Australia</span></button>
+          <button type="button" data-biome="borneo">Borneo</button>
+        </div>
       </div>
-      <button type="button" class="vr-enter" id="vr-enter">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-5l-2-3h-4l-2 3H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="7.5" cy="11.5" r="2" fill="currentColor"/><circle cx="16.5" cy="11.5" r="2" fill="currentColor"/></svg>
-        <span lang="de">Mit Cardboard-Brille ansehen</span><span lang="en">View with cardboard headset</span>
-      </button>
-      <p class="hero-soon"><span class="soon-tag">Coming soon</span><span lang="de">Mehr Informationen zum Projekt folgen in Kürze.</span><span lang="en">More information about the project is coming soon.</span></p>
+      <div class="hero-foot">
+        <div class="hero-meta">
+          <p class="hero-soon"><span class="soon-tag">Coming soon</span><span lang="de">Mehr Informationen zum Projekt folgen in Kürze.</span><span lang="en">More information about the project is coming soon.</span></p>
+        </div>
+        <button type="button" class="scan-info" aria-expanded="false" aria-controls="scan-note"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 10.5v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="7.6" r="1.1" fill="currentColor"/></svg><span class="sr-only"><span lang="de">Info zum Scan</span><span lang="en">About this scan</span></span></button>
+        <p class="immersive-note" id="scan-note">
+          <span class="note-real"><span lang="de">Echter Laserscan: <span data-hero-credit></span><a data-hero-dataset href="https://3dtrees.earth">3Dtrees.earth Datensatz <span data-hero-dataset></span></a>, <span data-hero-license>CC BY 4.0</span>. Ziehen zum Umsehen.</span><span lang="en">Real laser scan: <span data-hero-credit></span><a data-hero-dataset href="https://3dtrees.earth">3Dtrees.earth dataset <span data-hero-dataset></span></a>, <span data-hero-license>CC BY 4.0</span>. Drag to look around.</span></span>
+          <span class="note-gen"><span lang="de">Illustration: prozedural erzeugte Punktwolke. Ziehen zum Umsehen.</span><span lang="en">Illustration: procedurally generated point cloud. Drag to look around.</span></span>
+        </p>
+      </div>
     </div>
-    <p class="immersive-note">
-      <span class="note-real"><span lang="de">Echter Laserscan von 3Dtrees.earth: <a data-hero-dataset href="https://3dtrees.earth">Datensatz <span data-hero-dataset></span></a>, <span data-hero-license>CC BY 4.0</span>. Ziehen zum Umsehen.</span><span lang="en">Real laser scan from 3Dtrees.earth: <a data-hero-dataset href="https://3dtrees.earth">dataset <span data-hero-dataset></span></a>, <span data-hero-license>CC BY 4.0</span>. Drag to look around.</span></span>
-      <span class="note-gen"><span lang="de">Illustration: prozedural erzeugte Punktwolke. Ziehen zum Umsehen.</span><span lang="en">Illustration: procedurally generated point cloud. Drag to look around.</span></span>
-    </p>
     <button type="button" class="vr-exit" id="vr-exit"><span lang="de">VR beenden</span><span lang="en">Exit VR</span></button>
   </section>
 </section>
@@ -107,7 +112,7 @@
         <h3><span lang="de">Wer wir sind</span><span lang="en">Who we are</span></h3>
         <div class="post-people">
           <div class="post-person">
-            <div class="avatar small"><img src="https://uni-freiburg.de/enr-geosense/wp-content/uploads/sites/96/Killian.jpg" alt="Kilian Gerberding" loading="lazy" referrerpolicy="no-referrer"><span aria-hidden="true">KG</span></div>
+            <div class="avatar small"><img src="assets/people/kilian.jpg" alt="Kilian Gerberding" loading="lazy" referrerpolicy="no-referrer"><span aria-hidden="true">KG</span></div>
             <div>
               <h4>Kilian Gerberding</h4>
               <p lang="de">Er promoviert an der Universität Freiburg zu 3D-Laserscanning von Wäldern und entwickelt die offene Forschungsplattform 3Dtrees.earth mit, auf der Forschende weltweit ihre Waldscans analysieren und teilen. In ForestVerse kümmert er sich um die Daten, das Modell und die VR-Wälder.</p>
@@ -123,8 +128,8 @@
             </div>
           </div>
         </div>
-        <p lang="de">Betreut wird das Projekt von Prof. Dr. Teja Kattenborn. Mehr über uns steht unter <a href="#about">Über uns</a>.</p>
-        <p lang="en">The project is supervised by Prof. Dr. Teja Kattenborn. More about us under <a href="#about">About</a>.</p>
+        <p lang="de">Betreut wird das Projekt von Prof. Dr. Teja Kattenborn. Mehr über uns steht unter, ihr ahnt es schon, <a href="#about">Über uns</a>.</p>
+        <p lang="en">The project is supervised by Prof. Dr. Teja Kattenborn. More about us under – you guessed it – <a href="#about">About us</a>.</p>
 
         <h3><span lang="de">Wie es weitergeht</span><span lang="en">What happens next</span></h3>
         <p lang="de">Jetzt ist die Jury am Zug. Wir freuen uns darauf, von ihr zu hören, und berichten hier, sobald es Neuigkeiten gibt.</p>
@@ -142,13 +147,13 @@
   <div class="wrap">
 
     <header class="hero">
-      <span class="eyebrow"><span lang="de">Über uns</span><span lang="en">About</span></span>
+      <span class="eyebrow"><span lang="de">Über uns</span><span lang="en">About us</span></span>
       <h1><span lang="de">Das Team</span><span lang="en">The team</span></h1>
     </header>
 
     <div class="people">
       <article class="person">
-        <div class="avatar"><img src="https://uni-freiburg.de/enr-geosense/wp-content/uploads/sites/96/Killian.jpg" alt="Kilian Gerberding" loading="lazy" referrerpolicy="no-referrer"><span aria-hidden="true">KG</span></div>
+        <div class="avatar"><img src="assets/people/kilian.jpg" alt="Kilian Gerberding" loading="lazy" referrerpolicy="no-referrer"><span aria-hidden="true">KG</span></div>
         <div>
           <h2>Kilian Gerberding</h2>
           <p class="role"><span lang="de">Projektleitung · Doktorand Umweltwissenschaften</span><span lang="en">Project lead · PhD researcher, environmental sciences</span></p>
@@ -156,7 +161,6 @@
           <p lang="en">I am doing my PhD on 3D laser scanning of forests at the Chair of Sensor-based Geoinformatics, University of Freiburg, and co-develop the open platform 3Dtrees.earth, where researchers worldwide share 3D laser scans of forests.</p>
           <p class="links">
             <a href="mailto:kilian.gerberding@geosense.uni-freiburg.de"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m3.5 6 8.5 7 8.5-7" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span>E-Mail</span></a>
-            <a href="https://uni-freiburg.de/enr-geosense/team/kilian_gerberding/"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10 12 4l9 6M5 10v9h14v-9M9 19v-5h6v5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>geosense</span></a>
             <a href="https://scholar.google.de/citations?hl=de&amp;user=zy6J3RoAAAAJ"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5z" fill="currentColor"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span>Google Scholar</span></a>
             <a href="https://orcid.org/0000-0002-0424-2651"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"/><text x="12" y="16" text-anchor="middle" font-size="9" font-weight="700" fill="var(--surface)" font-family="Inter,sans-serif">iD</text></svg><span>ORCID</span></a>
             <a href="https://www.researchgate.net/profile/Kilian-Gerberding/research"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="4" fill="currentColor"/><text x="12" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="var(--surface)" font-family="Inter,sans-serif">RG</text></svg><span>ResearchGate</span></a>
@@ -175,7 +179,7 @@
         </div>
       </article>
       <article class="person">
-        <div class="avatar"><img src="https://uni-freiburg.de/enr-geosense/wp-content/uploads/sites/96/Universitaet-Freiburg-Kattenborn.28-1-scaled.jpg" alt="Teja Kattenborn" loading="lazy" referrerpolicy="no-referrer"><span aria-hidden="true">TK</span></div>
+        <div class="avatar"><img src="assets/people/teja.jpg" alt="Teja Kattenborn" loading="lazy" referrerpolicy="no-referrer"><span aria-hidden="true">TK</span></div>
         <div>
           <h2>Prof. Dr. Teja Kattenborn</h2>
           <p class="role"><span lang="de">Betreuung</span><span lang="en">Supervisor</span></p>
@@ -197,13 +201,6 @@
 </section>
 
 </main>
-
-<footer class="site-footer">
-  <div class="wrap">
-    <p lang="de">Eine Projektinitiative der Universität Freiburg 2026</p>
-    <p lang="en">A project initiative of the University of Freiburg, 2026</p>
-  </div>
-</footer>
 
 <script src="site.js"></script>
 <script src="forest.js"></script>
