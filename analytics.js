@@ -1,7 +1,7 @@
 // ForestVerse analytics: PostHog (EU servers). Other scripts call fvTrack(event, props) at any time; events wait
 // in a queue until PostHog has loaded. With no key set below, nothing loads and nothing is sent.
 //
-// Privacy: every visit is captured with session replay (inputs masked; the 3D view as 2 small frames a second), as
+// Privacy: every visit is captured with session replay (inputs masked; the 3D canvas is not recorded), as
 // Kilian decided on 2026-11-26. PostHog keeps its ids in memory only: no cookies and nothing stored in the
 // browser, so a visit ends when the tab closes. No consent notice is shown.
 (function () {
@@ -11,9 +11,6 @@
   window.fvTrack = function (event, props) { if (queue) queue.push([event, props || {}]); else if (window.posthog) window.posthog.capture(event, props || {}); };
   // ?notrack sends nothing; automated browsers (test runs) send nothing unless ?track=1
   if (!POSTHOG_KEY || /[?&]notrack\b/.test(location.search) || (navigator.webdriver && !/[?&]track=1\b/.test(location.search))) { queue = null; window.fvTrack = function () {}; return; }
-
-  var phone = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches && !matchMedia('(any-pointer: fine)').matches);
-  window.FV_CANVAS_REPLAY = true; // forest.js keeps its drawing buffer so replays can grab the 3D view
 
   var s = document.createElement('script');
   s.async = true; s.crossOrigin = 'anonymous';
@@ -29,12 +26,7 @@
       capture_pageleave: true,
       autocapture: true,
       capture_performance: true,             // page load timings (web vitals)
-      session_recording: {
-        maskAllInputs: true,
-        // the point clouds: 2 small frames a second (about 45 kB/s upload), 1 on phones to spare their data
-        captureCanvas: { recordCanvas: true, canvasFps: phone ? 1 : 2, canvasQuality: '0.4' },
-        canvasCapture: { resolutionScale: phone ? 0.4 : 0.5 }
-      },
+      session_recording: { maskAllInputs: true },
       disable_session_recording: false
     });
     var q = queue; queue = null;
