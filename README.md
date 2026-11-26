@@ -42,3 +42,7 @@ python3 -m http.server
 ```
 
 Then open http://localhost:8000.
+
+### Editing blog posts in the preview
+
+In the claude.ai preview of this site, each post has an "Beitrag bearbeiten" button (`post-edit.js`). Saving writes the changed text to `post-edits.json` in the preview only, as `{key: {from, html}}`; Claude then copies the new text into `index.html` here. On GitHub Pages the script does nothing.

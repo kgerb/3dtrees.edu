@@ -235,3 +235,11 @@ figure.concept figcaption{padding:0 8px 6px}
 .soon-grid li{border:1px dashed var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:10px;align-items:flex-start;color:var(--muted)}
 .soon-grid h3{color:var(--muted);font-weight:600}
 .soon-tag{display:inline-block;font-size:.68rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--sun-soft);color:var(--fg);white-space:nowrap}
+/* Inline post editing (claude.ai preview only, see post-edit.js) */
+.post-edit-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;order:-1}
+.post-edit-btn{font:inherit;font-size:.85rem;font-weight:600;padding:6px 12px;min-height:36px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.post-edit-btn.primary{background:var(--forest);border-color:var(--forest);color:var(--bg)}
+.post-edit-btn:disabled{opacity:.5;cursor:default}
+.post-edit-msg{font-size:.85rem;color:var(--muted)}
+.post.is-editing [contenteditable]{outline:1px dashed var(--forest);outline-offset:3px;border-radius:4px;cursor:text}
+.post.is-editing [contenteditable]:focus{outline:2px solid var(--sun)}
