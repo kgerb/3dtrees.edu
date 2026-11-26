@@ -31,7 +31,7 @@
     </a>
     <nav class="tabs" aria-label="Hauptnavigation">
       <a href="#project" data-tab-link="project"><span lang="de">Projekt</span><span lang="en">Project</span></a>
-      <a href="#news" data-tab-link="news">News</a>
+      <span class="tab-soon" aria-disabled="true">News <span class="soon-tag">Coming soon</span></span>
       <a href="#about" data-tab-link="about"><span lang="de">Über uns</span><span lang="en">About</span></a>
     </nav>
     <div class="lang-switch" role="group" aria-label="Sprache / Language">
@@ -83,213 +83,16 @@
     <button type="button" class="vr-exit" id="vr-exit"><span lang="de">VR beenden</span><span lang="en">Exit VR</span></button>
   </section>
   <div class="wrap">
-
-    <section class="intro reveal" id="project-intro">
-      <h2><span lang="de">Die Projektidee</span><span lang="en">The idea</span></h2>
-      <p class="lead" lang="de">Viele faszinierende und besonders schützenswerte Wälder der Erde wird kaum jemand je betreten können. Satelliten liefern jedoch Daten, um eine Simulation dieser Wälder zu ermöglichen. Wir verbinden diese Satellitendaten in Form eines Embedding-Modells (z. B. AlphaEarth) mit der weltweit größten Datensammlung an 3D-Laserscans von Wäldern, <a href="https://3dtrees.earth">3Dtrees.earth</a>. Auf diese Weise trainieren wir ein Modell, das die Struktur aller Wälder auf der gesamten Welt simulieren kann.</p>
-      <p class="lead" lang="en">Many fascinating forests on Earth, and many of the most worthy of protection, are places hardly anyone will ever be able to visit. Satellites, however, provide the data to simulate them. We combine these satellite data, in the form of an embedding model (such as AlphaEarth), with the world’s largest collection of 3D laser scans of forests, <a href="https://3dtrees.earth">3Dtrees.earth</a>. This lets us train a model that can simulate the structure of every forest in the world.</p>
-      <p class="lead" lang="de">Und so reicht ein beliebiger Klick auf die Weltkarte, und man erlebt die Einzigartigkeit unserer Wälder hautnah in Virtual Reality. Dafür muss man nicht um die halbe Welt reisen: Ein Smartphone und eine einfache Cardboard-VR-Brille reichen schon.</p>
-      <p class="lead" lang="en">So a single click anywhere on the world map is enough to experience the uniqueness of our forests up close in virtual reality. No need to travel halfway around the world: a smartphone and a simple cardboard VR headset are all it takes.</p>
+    <section class="soon" id="project-intro" aria-labelledby="soon-title">
+      <h2 id="soon-title"><span lang="de">Mehr über ForestVerse</span><span lang="en">More about ForestVerse</span></h2>
+      <ul class="soon-grid">
+        <li><span class="soon-tag">Coming soon</span><h3><span lang="de">Die Projektidee</span><span lang="en">The idea</span></h3></li>
+        <li><span class="soon-tag">Coming soon</span><h3><span lang="de">Der Weg der Daten</span><span lang="en">How the data travels</span></h3></li>
+        <li><span class="soon-tag">Coming soon</span><h3><span lang="de">Wälder der Welt</span><span lang="en">Forests of the world</span></h3></li>
+        <li><span class="soon-tag">Coming soon</span><h3><span lang="de">Mitmachen</span><span lang="en">Take part</span></h3></li>
+        <li><span class="soon-tag">Coming soon</span><h3>News</h3></li>
+      </ul>
     </section>
-
-    <figure class="concept reveal" id="concept-figure">
-      <div class="diagram">
-        <picture lang="de">
-          <source media="(max-width: 700px)" srcset="assets/figure/concept-figure-mobile.de.svg">
-          <img src="assets/figure/concept-figure.de.svg" width="1600" height="1000" loading="lazy" alt="Konzept von ForestVerse: 3D-Laserscans von Wäldern auf 3Dtrees.earth und ein Embedding-Modell aus Satellitendaten trainieren ein Modell, das die Struktur jedes Waldes simuliert. Ein Klick auf die Weltkarte, und man erlebt den Wald mit Smartphone und Cardboard-VR-Brille.">
-        </picture>
-        <picture lang="en">
-          <source media="(max-width: 700px)" srcset="assets/figure/concept-figure-mobile.en.svg">
-          <img src="assets/figure/concept-figure.en.svg" width="1600" height="1000" loading="lazy" alt="The ForestVerse concept: 3D laser scans of forests on 3Dtrees.earth and an embedding model of satellite data train a model that simulates the structure of any forest. One click on the world map, and you experience the forest with a smartphone and a cardboard VR headset.">
-        </picture>
-      </div>
-      <figcaption>
-        <span lang="de">Vom Laserscan über Satellitendaten zur simulierten Punktwolke, die man in VR erlebt.</span>
-        <span lang="en">From laser scan to satellite data to a simulated point cloud you experience in VR.</span>
-      </figcaption>
-    </figure>
-
-    <section class="block reveal">
-      <h2><span lang="de">Der Weg der Daten</span><span lang="en">How the data travels</span></h2>
-      <ol class="journey">
-        <li>
-          <span class="num">1</span>
-          <h3><span lang="de">3D-Laserscans</span><span lang="en">3D laser scans</span></h3>
-          <p lang="de">Laserscans erfassen Wälder in 3D, Stamm für Stamm und Ast für Ast. Auf 3Dtrees.earth liegt die weltweit größte Sammlung solcher Scans, über 3.000 Wälder.</p>
-          <p lang="en">Laser scans capture forests in 3D, stem by stem and branch by branch. 3Dtrees.earth holds the world’s largest collection of these scans, more than 3,000 forests.</p>
-        </li>
-        <li>
-          <span class="num">2</span>
-          <h3><span lang="de">Satellitendaten</span><span lang="en">Satellite data</span></h3>
-          <p lang="de">Satelliten sehen jeden Wald der Erde. Ein Embedding-Modell wie AlphaEarth fasst ihre Daten für jeden Ort der Welt zusammen.</p>
-          <p lang="en">Satellites see every forest on Earth. An embedding model such as AlphaEarth summarises their data for every place in the world.</p>
-        </li>
-        <li>
-          <span class="num">3</span>
-          <h3><span lang="de">Simulierte Punktwolke</span><span lang="en">Simulated point cloud</span></h3>
-          <p lang="de">Wir trainieren ein Modell, das beides verbindet und so die Struktur jedes Waldes der Welt als 3D-Punktwolke simuliert.</p>
-          <p lang="en">We train a model that connects the two and simulates the structure of any forest in the world as a 3D point cloud.</p>
-        </li>
-        <li>
-          <span class="num">4</span>
-          <h3><span lang="de">Virtual Reality</span><span lang="en">Virtual reality</span></h3>
-          <p lang="de">Ein Klick auf die Weltkarte, und man steht mittendrin, mit Smartphone und einfacher Cardboard-VR-Brille.</p>
-          <p lang="en">One click on the world map and you are standing in the forest, with a smartphone and a simple cardboard VR headset.</p>
-        </li>
-      </ol>
-    </section>
-
-    <section class="block reveal">
-      <h2><span lang="de">Für wen</span><span lang="en">Who it is for</span></h2>
-      <p lang="de">Im Fokus steht die Zukunft unserer Gesellschaft: Heranwachsende in Schulen, Universitäten und Freiwilligendiensten, gemeinsam mit Partnern weltweit.</p>
-      <p lang="en">Our focus is the future of our society: young people in schools, universities and voluntary services, together with partners around the world.</p>
-    </section>
-
-    <section class="block reveal">
-      <h2><span lang="de">Mitmachen: so läuft ein Workshop ab</span><span lang="en">Take part: how a workshop works</span></h2>
-      <ol class="journey">
-        <li>
-          <span class="num">1</span>
-          <h3><span lang="de">Kennenlernen</span><span lang="en">Get to know</span></h3>
-          <p lang="de">Die Teilnehmenden lernen die Rolle der Wälder in unseren Ökosystemen kennen, ihre Vielfalt und die heutigen Möglichkeiten der Fernerkundung.</p>
-          <p lang="en">Participants learn about the role of forests in our ecosystems, their diversity and what remote sensing can capture today.</p>
-        </li>
-        <li>
-          <span class="num">2</span>
-          <h3><span lang="de">Nachvollziehen</span><span lang="en">Follow the data</span></h3>
-          <p lang="de">Neben der ökologischen Bedeutung verfolgen sie den Weg der Daten: vom Laserscan über Satellitendaten bis zur simulierten Punktwolke.</p>
-          <p lang="en">Alongside the ecological importance, they follow the path of the data: from laser scan to satellite data to the simulated point cloud.</p>
-        </li>
-        <li>
-          <span class="num">3</span>
-          <h3><span lang="de">Eintauchen</span><span lang="en">Dive in</span></h3>
-          <p lang="de">Mit bereitgestellten VR-Brillen tauchen sie selbst in die Wälder unserer Welt ein, bewegen sich frei und erfahren sie auf ihre eigene Art.</p>
-          <p lang="en">With VR headsets we provide, they dive into the forests of our world themselves, move freely and experience them in their own way.</p>
-        </li>
-        <li>
-          <span class="num">4</span>
-          <h3><span lang="de">Austauschen</span><span lang="en">Share</span></h3>
-          <p lang="de">Im Nachgang tauschen sie ihre Eindrücke aus und diskutieren gemeinsam.</p>
-          <p lang="en">Afterwards they share their impressions and discuss them together.</p>
-        </li>
-      </ol>
-    </section>
-
-    <!-- Example forests. Drop screenshots into assets/examples/ with the file names below. -->
-    <section class="block reveal">
-      <h2><span lang="de">Wälder der Welt</span><span lang="en">Forests of the world</span></h2>
-      <p class="sub" lang="de">Vier Beispiele, wie unterschiedlich Wälder aussehen. Links der Satelliten-Fingerabdruck (AlphaEarth), rechts der Wald als 3D-Punktwolke. Die Bilder sind vorerst Illustrationen.</p>
-      <p class="sub" lang="en">Four examples of how different forests look. Left: the satellite fingerprint (AlphaEarth). Right: the forest as a 3D point cloud. The images are illustrations for now.</p>
-      <div class="gallery">
-        <article class="place" data-example="black-forest">
-          <div class="pair">
-            <div class="shot emb"><img src="assets/examples/black-forest-embedding.webp" alt="" loading="lazy"><span lang="de">Satellit</span><span lang="en">Satellite</span></div>
-            <div class="shot pc"><img src="assets/examples/black-forest-pointcloud.webp" alt="" loading="lazy"><span lang="de">Punktwolke</span><span lang="en">Point cloud</span></div>
-          </div>
-          <h3><span lang="de">Nationalpark Schwarzwald, Deutschland</span><span lang="en">Black Forest National Park, Germany</span></h3>
-          <p lang="de">Bergmischwald aus Fichte, Tanne und Buche, der Wald vor unserer Haustür.</p>
-          <p lang="en">Mountain mixed forest of spruce, fir and beech: the forest on our doorstep.</p>
-          <div class="place-actions">
-            <button type="button" class="beam" data-biome="black-forest" data-scroll-hero><span lang="de">Hineinbeamen ↑</span><span lang="en">Beam in ↑</span></button>
-            <a class="dataset" href="https://3dtrees.earth/datasets/2909"><span lang="de">Datensatz 2909</span><span lang="en">Dataset 2909</span> · CC BY 4.0</a>
-          </div>
-        </article>
-        <article class="place" data-example="boreal">
-          <div class="pair">
-            <div class="shot emb"><img src="assets/examples/boreal-embedding.webp" alt="" loading="lazy"><span lang="de">Satellit</span><span lang="en">Satellite</span></div>
-            <div class="shot pc"><img src="assets/examples/boreal-pointcloud.webp" alt="" loading="lazy"><span lang="de">Punktwolke</span><span lang="en">Point cloud</span></div>
-          </div>
-          <h3><span lang="de">Borealer Wald, Evo, Finnland</span><span lang="en">Boreal forest, Evo, Finland</span></h3>
-          <p lang="de">Kiefern, Fichten und Birken im südfinnischen Nadelwald, lange Winter.</p>
-          <p lang="en">Pine, spruce and birch in southern Finland’s conifer forest, long winters.</p>
-          <div class="place-actions">
-            <button type="button" class="beam" data-biome="boreal" data-scroll-hero><span lang="de">Hineinbeamen ↑</span><span lang="en">Beam in ↑</span></button>
-            <a class="dataset" href="https://3dtrees.earth/datasets/1069"><span lang="de">Datensatz 1069</span><span lang="en">Dataset 1069</span> · CC BY 4.0</a>
-          </div>
-        </article>
-        <article class="place" data-example="congo">
-          <div class="pair">
-            <div class="shot emb"><img src="assets/examples/congo-embedding.webp" alt="" loading="lazy"><span lang="de">Satellit</span><span lang="en">Satellite</span></div>
-            <div class="shot pc"><img src="assets/examples/congo-pointcloud.webp" alt="" loading="lazy"><span lang="de">Punktwolke</span><span lang="en">Point cloud</span></div>
-          </div>
-          <h3><span lang="de">Dja-Reservat, Kamerun (Kongobecken)</span><span lang="en">Dja Reserve, Cameroon (Congo Basin)</span></h3>
-          <p lang="de">Der zweitgrößte Regenwald der Erde, mit Baumriesen über 50 m.</p>
-          <p lang="en">The second-largest rainforest on Earth, with giants over 50 m tall.</p>
-          <div class="place-actions">
-            <button type="button" class="beam" data-biome="congo" data-scroll-hero><span lang="de">Hineinbeamen ↑</span><span lang="en">Beam in ↑</span></button>
-            <a class="dataset" href="https://3dtrees.earth/datasets/3140"><span lang="de">Datensatz 3140</span><span lang="en">Dataset 3140</span> · CC BY 4.0</a>
-          </div>
-        </article>
-        <article class="place" data-example="borneo">
-          <div class="pair">
-            <div class="shot emb"><img src="assets/examples/borneo-embedding.webp" alt="" loading="lazy"><span lang="de">Satellit</span><span lang="en">Satellite</span></div>
-            <div class="shot pc"><img src="assets/examples/borneo-pointcloud.webp" alt="" loading="lazy"><span lang="de">Punktwolke</span><span lang="en">Point cloud</span></div>
-          </div>
-          <h3><span lang="de">Sepilok, Borneo, Malaysia</span><span lang="en">Sepilok, Borneo, Malaysia</span></h3>
-          <p lang="de">Tieflandregenwald: vielschichtig, artenreich und durch Abholzung stark bedroht.</p>
-          <p lang="en">Lowland rainforest: many-layered, species-rich and under heavy threat from logging.</p>
-          <div class="place-actions">
-            <button type="button" class="beam" data-biome="borneo" data-scroll-hero><span lang="de">Hineinbeamen ↑</span><span lang="en">Beam in ↑</span></button>
-            <a class="dataset" href="https://3dtrees.earth/datasets/1477"><span lang="de">Datensatz 1477</span><span lang="en">Dataset 1477</span> · CC BY 4.0</a>
-          </div>
-        </article>
-      </div>
-    </section>
-
-
-  </div>
-</section>
-
-<!-- ============================== NEWS ============================== -->
-<section class="tab-panel" id="news" data-tab="news" hidden>
-  <div class="wrap">
-
-    <header class="hero">
-      <span class="eyebrow">News</span>
-      <h1><span lang="de">Neues aus dem ForestVerse</span><span lang="en">News from the ForestVerse</span></h1>
-      <p class="lead" lang="de">Hier berichten wir, wie das Projekt vorankommt: mit kurzen Videos, Eindrücken aus den Seminaren und allem rund um das digitale ForestVerse-Abschlussevent.</p>
-      <p class="lead" lang="en">This is where we report on the project’s progress: with short videos, impressions from the seminars and everything around the digital ForestVerse closing event.</p>
-    </header>
-
-    <div class="posts">
-      <article class="post reveal" id="post-2026-11-25">
-        <p class="post-meta"><time datetime="2026-11-25"><span lang="de">25. November 2026</span><span lang="en">25 November 2026</span></time> · Kilian Gerberding &amp; Marina Meyer</p>
-        <h2><span lang="de">Bewerbung eingereicht: Hallo, ForestVerse!</span><span lang="en">Application submitted: hello, ForestVerse!</span></h2>
-        <p class="post-lead" lang="de">Heute haben wir ForestVerse beim <a href="https://www.hochschulwettbewerb.net/2027/">Hochschulwettbewerb 2027</a> im Wissenschaftsjahr Raumfahrt eingereicht. Zeit, uns und unsere Idee kurz vorzustellen.</p>
-        <p class="post-lead" lang="en">Today we submitted ForestVerse to the <a href="https://www.hochschulwettbewerb.net/2027/">Hochschulwettbewerb 2027</a>, the German university competition of the Science Year on space. Time to briefly introduce ourselves and our idea.</p>
-
-        <h3><span lang="de">Die Idee</span><span lang="en">The idea</span></h3>
-        <p lang="de">„Man kann nur schützen, was man erfahren kann.“ Doch viele der faszinierendsten Wälder der Erde wird kaum jemand je betreten können. Wir wollen Satellitendaten mit der weltweit größten Sammlung an 3D-Laserscans von Wäldern auf 3Dtrees.earth verbinden und daraus ein Modell trainieren, das die Struktur aller Wälder der Welt simulieren kann. Ein Klick auf die Weltkarte, und man erlebt den Wald in Virtual Reality, mit nur einem Smartphone und einer einfachen Cardboard-Brille.</p>
-        <p lang="en">“You can only protect what you have experienced.” Yet hardly anyone will ever set foot in many of the most fascinating forests on Earth. We want to combine satellite data with the world’s largest collection of 3D laser scans of forests on 3Dtrees.earth and train a model that can simulate the structure of every forest in the world. One click on the world map, and you experience the forest in virtual reality, with nothing but a smartphone and a simple cardboard headset.</p>
-
-        <h3><span lang="de">Wer wir sind</span><span lang="en">Who we are</span></h3>
-        <div class="post-people">
-          <div class="post-person">
-            <div class="avatar small"><img src="https://uni-freiburg.de/enr-geosense/wp-content/uploads/sites/96/Killian.jpg" alt="Kilian Gerberding" loading="lazy" referrerpolicy="no-referrer"><span aria-hidden="true">KG</span></div>
-            <div>
-              <h4>Kilian Gerberding</h4>
-              <p lang="de">Ich promoviere an der Universität Freiburg zu 3D-Laserscanning von Wäldern und entwickle die offene Plattform 3Dtrees.earth mit, auf der Forschende weltweit ihre Waldscans teilen. In ForestVerse kümmere ich mich um die Daten, das Modell und die VR-Wälder.</p>
-              <p lang="en">I am doing my PhD on 3D laser scanning of forests at the University of Freiburg and co-develop the open platform 3Dtrees.earth, where researchers worldwide share their forest scans. In ForestVerse I take care of the data, the model and the VR forests.</p>
-            </div>
-          </div>
-          <div class="post-person">
-            <div class="avatar small"><span aria-hidden="true">MM</span></div>
-            <div>
-              <h4>Marina Meyer</h4>
-              <p lang="de">Marina studiert im Master Bildungswissenschaften und bringt so die Bildungsperspektive ein. Sie gestaltet, wie Jugendliche in Schulen, Universitäten und Freiwilligendiensten die Wälder der Welt kennenlernen, den Weg der Daten nachvollziehen und mit der VR-Brille selbst eintauchen.</p>
-              <p lang="en">Marina is doing her master’s in educational science and brings the education perspective. She shapes how young people in schools, universities and voluntary services get to know the world’s forests, follow the path of the data and dive in themselves with the VR headset.</p>
-            </div>
-          </div>
-        </div>
-        <p lang="de">Betreut wird das Projekt von Prof. Dr. Teja Kattenborn. Mehr über uns steht unter <a href="#about">Über uns</a>.</p>
-        <p lang="en">The project is supervised by Prof. Dr. Teja Kattenborn. More about us under <a href="#about">About</a>.</p>
-
-        <h3><span lang="de">Wie es weitergeht</span><span lang="en">What happens next</span></h3>
-        <p lang="de">Jetzt ist die Jury am Zug. Wir freuen uns darauf, von ihr zu hören, und berichten hier, sobald es Neuigkeiten gibt.</p>
-        <p lang="en">Now it is the jury’s turn. We are looking forward to hearing from them and will post here as soon as there is news.</p>
-      </article>
-    </div>
-
   </div>
 </section>
 
