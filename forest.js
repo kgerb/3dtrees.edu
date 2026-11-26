@@ -228,10 +228,19 @@
       lo = hs.length ? hs[Math.floor(hs.length * 0.02)] : 0; hi = hs.length ? hs[Math.floor(hs.length * 0.98)] : (o.zmax || 30);
       if (hi - lo < 1) hi = lo + 1;
     }
+    // Points are sorted into G x G ground tiles (about 8 m), keeping the random order inside each tile, so the
+    // viewer can skip tiles outside the view and draw the first part of a far tile to thin it evenly.
+    var G = o.grid || 1, cell = (o.size || 1) * 100 / G, tile = new Uint16Array(n), off = new Int32Array(G * G + 1), ymax = new Float32Array(G * G);
+    for (i = 0; i < n; i++) {
+      var t = Math.min(G - 1, ys[i] / cell | 0) * G + Math.min(G - 1, xs[i] / cell | 0);
+      tile[i] = t; off[t + 1]++; if (zs[i] > ymax[t]) ymax[t] = zs[i];
+    }
+    for (i = 0; i < G * G; i++) { off[i + 1] += off[i]; ymax[i] /= 100; }
+    var slot = off.slice(0, G * G);
     var pos = new Uint16Array(n * 4), col = new Uint8Array(n * 4), R = o.ramp, last = R.length - 1, g0 = o.ground[0], g1 = o.ground[1];
     var s = 99, span = 1 / (hi - lo);
     for (i = 0; i < n; i++) {
-      var j = i * 4, z = zs[i];
+      var j = slot[tile[i]]++ * 4, z = zs[i];
       pos[j] = xs[i]; pos[j + 1] = z; pos[j + 2] = ys[i];
       s = (s * 16807) % 2147483647;
       var k = 255 * (0.85 + 0.3 * (s - 1) / 2147483646), r, g, b;
@@ -243,7 +252,7 @@
       }
       col[j] = Math.min(255, r * k); col[j + 1] = Math.min(255, g * k); col[j + 2] = Math.min(255, b * k); col[j + 3] = 255;
     }
-    var out = { pos: pos, col: col, n: n, lo: lo, hi: hi };
+    var out = { pos: pos, col: col, n: n, lo: lo, hi: hi, tiles: { G: G, size: o.size, off: off, ymax: ymax } };
     if (o.wantPath) {
       // Walking circle and eye height with the least vegetation around the camera, so it walks through open
       // forest instead of brushing through shrubs. Eye level (1.7 m) is preferred; in dense forests the camera
@@ -297,7 +306,13 @@
     worker.onmessage = function (e) { var j = jobs[e.data.id]; delete jobs[e.data.id]; if (j) (e.data.error ? j.retry : j.ok)(e.data); }; // on a worker error, try once more without it
     worker.onerror = function () { worker = null; Object.keys(jobs).forEach(function (k) { var j = jobs[k]; delete jobs[k]; j.retry(); }); };
   } catch (e) { worker = null; }
+  var inFlight = 0;
   function scanJob(url, n, o) {
+    inFlight++;
+    var done = function (v) { inFlight--; return v; }, fail = function (e) { inFlight--; throw e; };
+    return scanJob1(url, n, o).then(done, fail);
+  }
+  function scanJob1(url, n, o) {
     var direct = function () { return fetchScan(url).then(function (b) { return decodeScan(b, n, o); }); };
     if (!worker) return direct();
     return new Promise(function (ok, no) {
@@ -314,14 +329,14 @@
   }
   function scanOpts(name, meta) {
     var B = biome(name), v = meta.view || {};
-    return { ramp: SCAN_RAMP, ground: B.ground, size: meta.size, zmax: meta.zmax, wantPath: !(v.r && v.height) };
+    return { ramp: SCAN_RAMP, ground: B.ground, size: meta.size, zmax: meta.zmax, wantPath: !(v.r && v.height), grid: CULL ? Math.max(4, Math.min(12, Math.round(meta.size / 8))) : 1 };
   }
   function loadReal(name) { // the light file, with camera path and colour range
     return loadMeta(name).then(function (meta) {
       return scanJob('assets/hero/' + name + '.lo', meta.lo.n, scanOpts(name, meta)).then(function (d) {
         var v = meta.view || {}, B = biome(name);
         var r = v.r ? v.r * meta.size : d.path.r, eyeH = v.height || (d.path ? d.path.h : 1.7);
-        return { pos: d.pos, col: d.col, count: d.n, full: !small && meta.hi ? meta.hi.n : d.n, bg: B.bg, real: true, half: meta.size / 2,
+        return { pos: d.pos, col: d.col, tiles: d.tiles, count: d.n, full: !small && meta.hi ? meta.hi.n : d.n, bg: B.bg, real: true, half: meta.size / 2,
           size: meta.size, dataset: meta.dataset, license: meta.license, credit: meta.credit, meta: meta, range: [d.lo, d.hi],
           view: { r: r, turn: v.turn != null ? v.turn : 0.55, height: eyeH,
                   pitch: v.pitch != null ? v.pitch : Math.max(0.04, Math.min(0.32, Math.atan((0.3 * d.hi - eyeH) / r))) } };
@@ -456,6 +471,7 @@
   // ?vf=4 tries 4 normalised components instead, which Direct3D reads without conversion; on that laptop
   // it measured worse, kept switchable for comparison.
   var VF4 = /[?&]vf=4\b/.test(location.search);
+  var CULL = !/[?&]cull=0\b/.test(location.search), LOD = !/[?&]lod=0\b/.test(location.search);
   var pending = null; // full-detail scan being copied to the GPU, a slice per frame
   function upload(c) {
     cloud = c; pending = null;
@@ -480,7 +496,7 @@
     gl.bindBuffer(gl.ARRAY_BUFFER, b.pos); gl.bufferSubData(gl.ARRAY_BUFFER, p.at * 8, p.d.pos.subarray(p.at * 4, end * 4));
     gl.bindBuffer(gl.ARRAY_BUFFER, b.col); gl.bufferSubData(gl.ARRAY_BUFFER, p.at * 4, p.d.col.subarray(p.at * 4, end * 4));
     p.at = end;
-    if (end >= n) { front = 1 - front; p.c.reveal = { from: p.c.count, t0: performance.now() }; p.c.count = n; pending = null; settle = Math.max(settle, 2); }
+    if (end >= n) { front = 1 - front; p.c.reveal = { from: p.c.count, t0: performance.now() }; p.c.count = n; p.c.tiles = p.d.tiles; pending = null; settle = Math.max(settle, 2); }
     bindCloud();
   }
   function bindCloud() {
@@ -531,23 +547,27 @@
 
   // ---------------------------------------------------------------- adaptive quality
   // Goal: every frame on time, with as many points as this device can draw. The viewer learns a point
-  // budget: when frames start to miss the display's refresh it draws fewer points, and once frames are
-  // steady again it tries more, so a fast device climbs back to the full scan. If a step up fails again, it
-  // waits longer before the next try (8, 16, 32 s ...). The budget is a number of points, so it carries over
-  // from forest to forest and is remembered for the next visit. The points are stored in random order, so
-  // drawing the first part of the buffer thins the whole scan evenly, and each point grows a little to keep
-  // the crowns closed. Changing the point count costs nothing, unlike resizing the canvas, so resolution is
-  // lowered only as a last resort and never raised again mid-walk (each resize reallocates buffers).
+  // budget (points drawn per frame): when frames start to miss the display's refresh it draws fewer, and once
+  // frames are steady again it tries more, so a fast device climbs back to the full scan. Each cut is a test:
+  // if frames are no better 3 s after drawing fewer points, the points were not the cause (Firefox, for one,
+  // now and then skips a refresh whatever it draws), so the cut is undone and that rate of late frames is
+  // taken as normal for this browser. If a step up fails again, the next try waits longer (8, 16, 32 s ...).
+  // The budget carries over from forest to forest and is remembered for the next visit. Changing the point
+  // count costs nothing, unlike resizing the canvas, so resolution is lowered only as a last resort.
   // ?q=0.5 fixes the share of points for testing; ?fps=1 shows frame rate, points and resolution.
   var Q_FIXED = (function () { var m = /[?&]q=([\d.]+)/.exec(location.search); return m ? Math.max(0.2, Math.min(1, +m[1])) : 0; })();
   var MIN_BUDGET = 80000, BUDGET_KEY = 'fv-budget';
-  var budget = (function () { try { var v = +localStorage.getItem(BUDGET_KEY); return v >= MIN_BUDGET ? v : Infinity; } catch (e) { return Infinity; } })();
+  var budget = (function () { try { var v = +localStorage.getItem(BUDGET_KEY); return v >= MIN_BUDGET ? v * 1.5 : Infinity; } catch (e) { return Infinity; } })();
   function saveBudget() { try { if (isFinite(budget)) localStorage.setItem(BUDGET_KEY, String(Math.round(budget))); else localStorage.removeItem(BUDGET_KEY); } catch (e) {} }
-  var failAt = Infinity, hold = 8, sinceCut = 0, resLevel = 1, renderScale = 1;
-  var vsync = 16.7, frameEma = 16.7, winT = 0, seen = 0, late = 0, bad = 0, calm = 0, settle = 0;
+  var failAt = Infinity, hold = 8, sinceCut = 0, resLevel = 1, renderScale = 1, noise = 0, trial = null;
+  var vsync = 16.7, frameEma = 16.7, winT = 0, winMs = 0, seen = 0, late = 0, bad = 0, calm = 0, settle = 0;
+  var lastDrawn = 0, lastWant = 0; // points drawn in the last frame, and how many would be drawn with no budget
   function maxDpr() { return Math.min(window.devicePixelRatio || 1, small ? 1.25 : 1.5); }
   function adapt(rawMs, sec) {
     if (Q_FIXED || !cloud || !cloud.real) return;
+    // While a scan downloads, decodes, uploads or trickles in, slow frames say nothing about how many points
+    // this device can draw: wait until a second after loading is done, unless frames are far too slow anyway.
+    if ((pending || cloud.reveal || inFlight || prefetching) && frameEma < vsync * 2.5) { frameEma += (Math.min(rawMs, 250) - frameEma) * 0.1; settle = 1; seen = late = 0; winT = winMs = 0; bad = 0; return; }
     if (settle > 0) { settle -= sec; return; } // after a switch or a hidden tab, the first frames are not representative
     // refresh interval of the display: follows fast frames quickly, slow ones hardly at all (60 to 144 Hz)
     vsync += (rawMs - vsync) * (rawMs < vsync ? 0.3 : 0.002);
@@ -556,30 +576,44 @@
     // frames that are steadily a bit too slow
     frameEma += (Math.min(rawMs, 250) - frameEma) * 0.1;
     seen++; if (rawMs > vsync * 1.6 && (rawMs < vsync * 3.5 || frameEma > vsync * 2)) late++;
-    sinceCut += sec; winT += sec;
+    sinceCut += sec; winT += sec; winMs += Math.min(rawMs, 250);
     if (seen < 30 && (winT < 0.5 || seen < 3)) return; // a window is 30 frames or half a second
-    var drawn = drawCount();
-    bad = late * 10 >= seen ? bad + 1 : 0; // more than one frame in ten missed the refresh...
-    if (bad >= 2) { // ...twice in a row (about one second): fewer points
-      bad = 0; calm = 0; settle = 0.25;
-      if (drawn > MIN_BUDGET) {
-        if (drawn >= failAt * 0.95) hold = Math.min(64, hold * 2); // a step up failed again: wait longer next time
-        failAt = drawn; sinceCut = 0;
-        budget = Math.max(MIN_BUDGET, drawn * (late * 2 >= seen ? 0.7 : 0.85));
-        saveBudget();
-      } else if (resLevel > 0.7) resLevel = Math.max(0.7, resLevel - 0.15);
-    } else if (late * 20 <= seen && !bad) { // steady (at most one frame in twenty late): try more points
-      calm += winT;
-      if (calm > 2 && drawn >= Math.min(budget, cloud.count) && budget < cloud.count) {
-        var next = Math.min(cloud.count, drawn * (isFinite(failAt) ? 1.12 : 1.25) + 20000); // bolder with no failure known
-        if (next < failAt * 0.95 || sinceCut > hold) {
-          budget = next >= cloud.count && !isFinite(failAt) ? Infinity : next; // all points fine: no limit known
-          calm = 0; saveBudget();
+    var drawn = lastDrawn, rate = late / seen, ms = winMs / seen;
+    noise *= 0.995; // what counts as normal is forgotten slowly (half-life about a minute)
+    if (trial) { // the 3 s after a cut: did fewer points help?
+      trial.late += late; trial.seen += seen; trial.t += winT; trial.ms += winMs;
+      if (trial.t >= 3) {
+        var after = trial.late / trial.seen, afterMs = trial.ms / trial.seen;
+        if (after > Math.max(0.04, trial.before * 0.6) && afterMs > trial.beforeMs * 0.93) { // no clear improvement: not the points
+          noise = Math.min(0.3, Math.max(noise, after)); budget = trial.from; failAt = trial.failAt; hold = trial.hold;
         }
+        saveBudget(); // only a tested limit is remembered
+        trial = null; calm = 0;
       }
-      if (sinceCut > hold + 20 && drawn > failAt) { failAt = Infinity; hold = 8; } // fine above the old limit for a while
-    } else calm = 0;
-    seen = 0; late = 0; winT = 0;
+    } else {
+      bad = rate >= noise + 0.1 ? bad + 1 : 0; // a tenth more frames than normal missed the refresh...
+      if (bad >= 2) { // ...twice in a row (about one second): fewer points, as a test
+        bad = 0; calm = 0; settle = 0.25;
+        if (drawn > MIN_BUDGET) {
+          trial = { from: budget, failAt: failAt, hold: hold, before: rate, beforeMs: ms, late: 0, seen: 0, t: 0, ms: 0 };
+          if (drawn >= failAt * 0.95) hold = Math.min(64, hold * 2); // a step up failed again: wait longer next time
+          failAt = drawn; sinceCut = 0;
+          budget = Math.max(MIN_BUDGET, drawn * (rate - noise >= 0.5 ? 0.7 : 0.85));
+        } else if (resLevel > 0.7) resLevel = Math.max(0.7, resLevel - 0.15);
+      } else if (rate <= noise + 0.05) { // steady: try more points
+        calm += winT;
+        var fresh = !isFinite(failAt); // no limit found in this visit yet: climb quickly
+        if (calm > (fresh ? 1 : 2) && lastWant > budget) {
+          var next = drawn * (fresh ? 1.3 : 1.12) + 20000;
+          if (next < failAt * 0.95 || sinceCut > hold) {
+            budget = fresh && next >= lastWant ? Infinity : next; // everything in view fits: no limit known
+            calm = 0; saveBudget();
+          }
+        }
+        if (sinceCut > hold + 20 && drawn > failAt) { failAt = Infinity; hold = 8; } // fine above the old limit for a while
+      } else calm = 0;
+    }
+    seen = 0; late = 0; winT = 0; winMs = 0;
   }
   function resize() {
     var dpr = Math.max(0.75, maxDpr() * resLevel);
@@ -587,24 +621,63 @@
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
     renderScale = canvas.width / Math.max(1, canvas.clientWidth);
   }
-  // The full scan trickles in: the number of points drawn grows from the light scan's to all of them over
+  // The full scan trickles in: the share of points drawn grows from the light scan's to all of them over
   // 3 s, and the points shrink as they get denser (see thin), so detail fills in instead of popping.
-  function drawCount() {
-    if (!cloud.real) return cloud.count;
-    var n = Q_FIXED ? Math.round(cloud.count * Q_FIXED) : Math.min(cloud.count, Math.round(budget)), rv = cloud.reveal;
-    if (rv) {
-      var k = Math.min(1, (performance.now() - rv.t0) / 3000), e = k * k * (3 - 2 * k);
-      n = Math.min(n, Math.round(rv.from + (cloud.count - rv.from) * e));
-      if (k >= 1) cloud.reveal = null;
+  function revealShare() {
+    var rv = cloud.reveal; if (!rv) return 1;
+    var k = Math.min(1, (performance.now() - rv.t0) / 3000), e = k * k * (3 - 2 * k);
+    if (k >= 1) cloud.reveal = null;
+    return (rv.from + (cloud.count - rv.from) * e) / cloud.count;
+  }
+  // Only what is in view is drawn: tiles outside the view are skipped, far tiles are thinned (their points
+  // grow to keep the same cover) and tiles are drawn near to far, so hidden points fail the depth test early.
+  // ?cull=0 draws everything as before, ?lod=0 keeps culling but no thinning, for comparison.
+  var VP = new Float32Array(16), TL_T = new Int32Array(256), TL_D = new Float32Array(256), TL_L = new Float32Array(256), LOD_NEAR = 12;
+  function mul4(a, b, o) {
+    for (var c = 0; c < 4; c++) for (var r = 0; r < 4; r++) o[c * 4 + r] = a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1] + a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3];
+    return o;
+  }
+  function boxOut(m, x0, y0, z0, x1, y1, z1) { // all 8 corners beyond one side of the view
+    var all = 63;
+    for (var i = 0; i < 8; i++) {
+      var x = i & 1 ? x1 : x0, y = i & 2 ? y1 : y0, z = i & 4 ? z1 : z0;
+      var cx = m[0] * x + m[4] * y + m[8] * z + m[12], cy = m[1] * x + m[5] * y + m[9] * z + m[13];
+      var cz = m[2] * x + m[6] * y + m[10] * z + m[14], cw = m[3] * x + m[7] * y + m[11] * z + m[15];
+      all &= (cx < -cw ? 1 : 0) | (cx > cw ? 2 : 0) | (cy < -cw ? 4 : 0) | (cy > cw ? 8 : 0) | (cz < -cw ? 16 : 0) | (cz > cw ? 32 : 0);
+      if (!all) return false;
     }
-    return n;
+    return true;
+  }
+  function drawScan(eye) {
+    var T = cloud.tiles, G = T.G, cs = T.size / G, half = cloud.half, off = T.off, n = 0, want = 0, i, j;
+    for (var t = 0; t < G * G; t++) {
+      var cnt = off[t + 1] - off[t]; if (!cnt) continue;
+      var x0 = (t % G) * cs - half, z0 = (t / G | 0) * cs - half;
+      if (G > 1 && boxOut(VP, x0, -1, z0, x0 + cs, T.ymax[t] + 1, z0 + cs)) continue;
+      var dx = Math.max(x0 - eye[0], 0, eye[0] - x0 - cs), dz = Math.max(z0 - eye[2], 0, eye[2] - z0 - cs), d = Math.sqrt(dx * dx + dz * dz);
+      var lod = LOD && G > 1 && d > LOD_NEAR ? Math.max(0.15, Math.pow(LOD_NEAR / d, 1.2)) : 1;
+      for (i = n++; i > 0 && TL_D[i - 1] > d; i--) { TL_T[i] = TL_T[i - 1]; TL_D[i] = TL_D[i - 1]; TL_L[i] = TL_L[i - 1]; } // near to far
+      TL_T[i] = t; TL_D[i] = d; TL_L[i] = lod; want += cnt * lod;
+    }
+    var rs = revealShare(); want *= rs;
+    var share = (Q_FIXED || Math.min(1, budget / Math.max(1, want))) * rs, dens = cloud.full / cloud.count, drawn = 0;
+    var size = small ? 0.08 : 0.07, px = (small ? 4.0 : 5.0) * renderScale / maxDpr();
+    for (j = 0; j < n; j++) {
+      var tt = TL_T[j], c = off[tt + 1] - off[tt], k = Math.round(c * TL_L[j] * share);
+      if (k < 1) continue;
+      var thin = Math.min(2, Math.sqrt(dens * c / k)); // fewer points drawn: make each a little larger so the crowns stay closed
+      gl.uniform1f(U.uSize, size * thin); gl.uniform1f(U.uMaxPx, px * thin);
+      gl.drawArrays(gl.POINTS, off[tt], k); drawn += k;
+    }
+    lastDrawn = drawn; lastWant = want;
   }
   var fpsBox = /[?&]fps=1/.test(location.search) ? document.createElement('div') : null, fpsN = 0, fpsT = 0;
   if (fpsBox) { fpsBox.style.cssText = 'position:fixed;left:8px;top:64px;z-index:99;font:12px/1.3 monospace;color:#fff;background:rgba(0,0,0,.6);padding:4px 6px;border-radius:4px;pointer-events:none'; document.body.appendChild(fpsBox); }
   var fpsMax = 0, fpsPrev = 0;
   function fpsTick(t) {
     fpsN++; fpsMax = Math.max(fpsMax, t - fpsPrev); fpsPrev = t; if (t - fpsT < 500) return;
-    fpsBox.textContent = Math.round(fpsN * 1000 / (t - fpsT)) + ' fps · longest ' + Math.round(fpsMax) + ' ms · ' + (cloud.count / 1e6).toFixed(2) + 'M × ' + Math.round(drawCount() / cloud.count * 100) + '% points · ' +
+    fpsBox.textContent = Math.round(fpsN * 1000 / (t - fpsT)) + ' fps · longest ' + Math.round(fpsMax) + ' ms · ' + (cloud.count / 1e6).toFixed(2) + 'M, drawn ' + (lastDrawn / 1e6).toFixed(2) + 'M · ' +
+      (Q_FIXED ? 'fixed ' + Q_FIXED : isFinite(budget) ? 'budget ' + (budget / 1e6).toFixed(2) + 'M' : 'no limit') + (noise > 0.01 ? ' · normal late ' + Math.round(noise * 100) + '%' : '') + ' · ' +
       canvas.width + '×' + canvas.height + (edl && EDL_STRENGTH > 0 ? ' · depth on' : ' · depth off') + (worker ? '' : ' · no worker');
     fpsN = 0; fpsT = t; fpsMax = 0;
   }
@@ -628,7 +701,8 @@
     gl.uniformMatrix4fv(U.uView, false, vv.m);
     gl.uniformMatrix4fv(U.uProj, false, perspective(fov, aspect, NEAR, FAR));
     gl.uniform1f(U.uFocal, (h / 2) / Math.tan(fov / 2));
-    gl.drawArrays(gl.POINTS, 0, drawCount());
+    if (cloud.real) { mul4(PM, vv.m, VP); drawScan(eye); }
+    else gl.drawArrays(gl.POINTS, 0, cloud.count);
   }
 
   function frame(t) {
@@ -654,10 +728,7 @@
     if (pending) stepUpload();
     if (cloud.real) { gl.uniform1f(U.uCamZ, 0); gl.uniform1f(U.uL, 100000); gl.uniform1f(U.uPosScale, VF4 ? 655.35 : 0.01); gl.uniform3f(U.uPosOff, -cloud.half, 0, -cloud.half); } // positions: uint16 cm -> m
     else { gl.uniform1f(U.uCamZ, camZ); gl.uniform1f(U.uL, L); gl.uniform1f(U.uPosScale, 1); gl.uniform3f(U.uPosOff, 0, 0, 0); }
-    if (cloud.real) {
-      var thin = Math.min(2, Math.sqrt(cloud.full / drawCount())); // fewer points drawn: make each a little larger so the crowns stay closed
-      gl.uniform1f(U.uSize, (small ? 0.08 : 0.07) * thin); gl.uniform1f(U.uMaxPx, (small ? 4.0 : 5.0) * renderScale / maxDpr() * thin); gl.uniform1f(U.uNear, 2.2);
-    }
+    if (cloud.real) gl.uniform1f(U.uNear, 2.2); // point sizes are set per tile in drawScan
     else { gl.uniform1f(U.uSize, small ? 0.11 : 0.13); gl.uniform1f(U.uMaxPx, 10.0); gl.uniform1f(U.uNear, 0.0); }
     gl.uniform3fv(U.uBg, bg); gl.uniform1f(U.uFogFar, fogFar);
     if (stereo) { drawEye(0, W2 / 2, H2, -0.032); drawEye(W2 / 2, W2 / 2, H2, 0.032); }
@@ -699,16 +770,17 @@
     });
   }
   // Once the first scan is in, quietly fetch the light files of the other forests, so switching is quick.
-  var prefetched = false;
+  var prefetched = false, prefetching = false;
   function prefetchOthers() {
     if (prefetched || small || (navigator.connection && navigator.connection.saveData)) return;
     prefetched = true;
     var keys = Array.prototype.map.call(document.querySelectorAll('button[data-biome]'), function (b) { return b.dataset.biome; });
     var later = window.requestIdleCallback ? function (f) { requestIdleCallback(f, { timeout: 4000 }); } : function (f) { setTimeout(f, 1500); };
     later(function () {
+      prefetching = true;
       keys.reduce(function (p, k) {
         return p.then(function () { return loadMeta(k).then(function () { return fetchScan('assets/hero/' + k + '.lo'); }).catch(function () {}); });
-      }, Promise.resolve());
+      }, Promise.resolve()).then(function () { prefetching = false; });
     });
   }
   document.querySelectorAll('button[data-biome]').forEach(function (b) {
