@@ -12,7 +12,13 @@
   if (!gl) { hero.classList.add('no-webgl'); return; }
 
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var small = Math.min(window.innerWidth, window.innerHeight) < 700;
+  // Phones and small tablets get the light scans. Not decided by window size: a laptop at 150 % scaling has a
+  // window only ~600 px tall but a desktop GPU.
+  function isSmall() {
+    var mm = window.matchMedia, touchOnly = mm && mm('(pointer: coarse)').matches && !mm('(any-pointer: fine)').matches;
+    return touchOnly || Math.min(screen.width, screen.height) < 600;
+  }
+  var small = isSmall();
 
   // ---------------------------------------------------------------- random
   var seed = 1;
@@ -455,16 +461,18 @@
     c.pos = c.col = null; // the GPU has them now
     bindCloud();
   }
-  // Copying 24 MB to the GPU in one go stalls a frame; slices of 200k points don't.
+  // Copying 24 MB to the GPU in one go stalls a frame; slices of 100k points (1.2 MB) don't.
   function uploadDetail(c, d) {
-    var b = BUF[1 - front];
-    gl.bindBuffer(gl.ARRAY_BUFFER, b.pos); gl.bufferData(gl.ARRAY_BUFFER, d.pos.byteLength, gl.STATIC_DRAW);
-    gl.bindBuffer(gl.ARRAY_BUFFER, b.col); gl.bufferData(gl.ARRAY_BUFFER, d.col.byteLength, gl.STATIC_DRAW);
-    pending = { c: c, d: d, at: 0 };
-    bindCloud();
+    pending = { c: c, d: d, at: -1 };
   }
   function stepUpload() {
-    var p = pending, b = BUF[1 - front], n = p.d.n, end = Math.min(n, p.at + 200000);
+    var p = pending, b = BUF[1 - front], n = p.d.n;
+    if (p.at < 0) { // first frame: only reserve the GPU memory
+      gl.bindBuffer(gl.ARRAY_BUFFER, b.pos); gl.bufferData(gl.ARRAY_BUFFER, p.d.pos.byteLength, gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER, b.col); gl.bufferData(gl.ARRAY_BUFFER, p.d.col.byteLength, gl.STATIC_DRAW);
+      p.at = 0; bindCloud(); return;
+    }
+    var end = Math.min(n, p.at + 100000);
     gl.bindBuffer(gl.ARRAY_BUFFER, b.pos); gl.bufferSubData(gl.ARRAY_BUFFER, p.at * 8, p.d.pos.subarray(p.at * 4, end * 4));
     gl.bindBuffer(gl.ARRAY_BUFFER, b.col); gl.bufferSubData(gl.ARRAY_BUFFER, p.at * 4, p.d.col.subarray(p.at * 4, end * 4));
     p.at = end;
@@ -738,7 +746,22 @@
     }).observe(hero);
   }
   document.addEventListener('visibilitychange', function () { if (document.hidden) stop(); else start(); });
-  window.addEventListener('resize', function () { small = Math.min(window.innerWidth, window.innerHeight) < 700; start(); });
+  window.addEventListener('resize', function () { start(); });
 
+  // Draw one point through every program once before the scan arrives: some drivers (ANGLE on Windows)
+  // compile shaders on first use, which froze the first frame of the forest for ~200 ms.
+  (function warmUp() {
+    var p = gl.createBuffer(), c = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, p); gl.bufferData(gl.ARRAY_BUFFER, new Uint16Array(4), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos, 3, gl.UNSIGNED_SHORT, false, 8, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, c); gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(4), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(aCol); gl.vertexAttribPointer(aCol, 3, gl.UNSIGNED_BYTE, true, 4, 0);
+    resize();
+    var w = canvas.width, h = canvas.height, useEdl = !!(edl && EDL_STRENGTH > 0 && edlTarget(w, h));
+    gl.viewport(0, 0, w, h); gl.clearColor(BG[0], BG[1], BG[2], useEdl ? 0 : 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.drawArrays(gl.POINTS, 0, 1);
+    if (useEdl) edlResolve(w, h);
+    gl.deleteBuffer(p); gl.deleteBuffer(c);
+  })();
   setBiome(current);
 })();
