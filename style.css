@@ -257,3 +257,4 @@ figure.concept figcaption{padding:0 8px 6px}
 [data-tab="project"] .lang-switch button[aria-pressed="true"]{background:#fff;color:#0d1a12}
 [data-tab="project"] .immersive-content{padding-top:72px}
 @media (max-width:640px){[data-tab="project"] .immersive-content{padding-top:112px}}
+[data-tab="project"] .brand{visibility:hidden}

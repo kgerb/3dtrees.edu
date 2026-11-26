@@ -23,6 +23,13 @@
   // Heights in metres. Numbers are rough, chosen to make the five forests look different.
   var VIRIDIS = [[0.2, 0.46, 0.52], [0.18, 0.72, 0.48], [1.0, 0.92, 0.2]];
   var BG = [0.035, 0.045, 0.07];
+  // viridis from blue to yellow (the darkest purple is left out so the lowest leaves stay visible on the dark sky)
+  var SCAN_RAMP = [[0.23, 0.32, 0.55], [0.13, 0.57, 0.55], [0.37, 0.79, 0.38], [0.99, 0.91, 0.15]];
+  function ramp(stops, t) {
+    t = Math.max(0, Math.min(1, t)) * (stops.length - 1);
+    var i = Math.min(stops.length - 2, Math.floor(t)), u = t - i, a = stops[i], b = stops[i + 1];
+    return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u];
+  }
   var BIOMES = {
     'black-forest': {
       bg: BG, stems: 150, budget: 1.0,
@@ -206,7 +213,13 @@
       return get('.bin').catch(function () { return get('.wasm'); }).then(function (buf) {
         var n = meta[lod].n, xs = new Uint16Array(buf, 0, n), ys = new Uint16Array(buf, n * 2, n), zs = new Uint16Array(buf, n * 4, n);
         var flag = new Uint8Array(buf, n * 6, n);
-        var B = BIOMES[name], half = meta.size / 2, zmax = meta.zmax || 30;
+        var B = BIOMES[name], half = meta.size / 2;
+        // colour range: 2nd to 98th percentile of vegetation height in this scan, so every scan uses the whole ramp
+        var hs = [];
+        for (var q = 0; q < n; q += Math.max(1, Math.floor(n / 20000))) if (!flag[q]) hs.push(zs[q] / 100);
+        hs.sort(function (a, b) { return a - b; });
+        var lo = hs.length ? hs[Math.floor(hs.length * 0.02)] : 0, hi = hs.length ? hs[Math.floor(hs.length * 0.98)] : (meta.zmax || 30);
+        if (hi - lo < 1) hi = lo + 1;
         var pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
         seed = 99;
         for (var i = 0; i < n; i++) {
@@ -215,12 +228,14 @@
           var c, k = 0.85 + 0.3 * rnd();
           if (flag[i]) { c = B.ground[i & 1]; k *= 1.6; }
           else {
-            var t = Math.min(1, h / zmax), a = t < 0.5 ? VIRIDIS[0] : VIRIDIS[1], b2 = t < 0.5 ? VIRIDIS[1] : VIRIDIS[2], u = t < 0.5 ? t * 2 : (t - 0.5) * 2;
-            c = [a[0] + (b2[0] - a[0]) * u, a[1] + (b2[1] - a[1]) * u, a[2] + (b2[2] - a[2]) * u];
+            c = ramp(SCAN_RAMP, (h - lo) / (hi - lo));
           }
           col[j] = Math.min(1, c[0] * k); col[j + 1] = Math.min(1, c[1] * k); col[j + 2] = Math.min(1, c[2] * k);
         }
-        return { pos: pos, col: col, count: n, bg: B.bg, real: true, size: meta.size, dataset: meta.dataset, license: meta.license, credit: meta.credit };
+        var v = meta.view || {}, r = (v.r || 0.38) * meta.size;
+        return { pos: pos, col: col, count: n, bg: B.bg, real: true, size: meta.size, dataset: meta.dataset, license: meta.license, credit: meta.credit,
+          view: { r: r, turn: v.turn != null ? v.turn : 0.55, height: v.height || 1.7,
+                  pitch: v.pitch != null ? v.pitch : Math.max(0.08, Math.min(0.32, Math.atan((0.3 * hi - 1.7) / r))) } };
       });
     });
   }
@@ -296,7 +311,7 @@
   // ---------------------------------------------------------------- state
   var FOV = 70 * Math.PI / 180;
   var camZ = 0, speed = reduceMotion ? 0 : 1.25; // m/s, a slow walk
-  var yaw = 0, pitch = 0.06, tYaw = 0, tPitch = 0.06, dragYaw = 0, dragPitch = 0;
+  var yaw = 0, pitch = 0.06, tYaw = 0, tPitch = 0.06, basePitch = 0.06, dragYaw = 0, dragPitch = 0;
   var fogFar = 0, fogTarget = 120;
   var stereo = false, orient = null, orient0 = null;
   var visible = true, running = false, last = 0;
@@ -314,9 +329,9 @@
     var bob = reduceMotion ? 0 : Math.sin(camZ * 1.9) * 0.025;
     var eye, yw = yaw;
     if (cloud.real) {
-      var r = cloud.size * 0.3, th = camZ / r;
-      eye = [Math.cos(th) * r, 1.7 + bob, Math.sin(th) * r];
-      yw = Math.atan2(-Math.sin(th), Math.cos(th)) + yaw - 0.35; // along the path, turned slightly towards the plot centre
+      var V = cloud.view, r = V.r, th = camZ / r;
+      eye = [Math.cos(th) * r, V.height + bob, Math.sin(th) * r];
+      yw = Math.atan2(-Math.sin(th), Math.cos(th)) + yaw - V.turn; // along the path around the plot, turned towards its centre
     } else {
       eye = [Math.sin(camZ * 0.05) * 0.6, 1.7 + bob + terrain(0, camZ), 0];
     }
@@ -369,6 +384,7 @@
     loadReal(name).catch(function () { return generate(name); }).then(function (c) {
       if (token !== loadToken) return;
       upload(c);
+      basePitch = c.real ? c.view.pitch : 0.06; tPitch = basePitch; tYaw = 0; dragYaw = 0; dragPitch = 0;
       fogFar = 2; // forest emerges from the fog
       fogTarget = c.real ? Math.max(60, c.size * 0.9) : 120;
       hero.classList.toggle('is-real', !!c.real);
@@ -399,7 +415,7 @@
     if (e.pointerType === 'mouse' && !dragging) {
       var r = hero.getBoundingClientRect();
       tYaw = -((e.clientX - r.left) / r.width - 0.5) * 0.6;
-      tPitch = 0.06 - ((e.clientY - r.top) / r.height - 0.5) * 0.3;
+      tPitch = basePitch - ((e.clientY - r.top) / r.height - 0.5) * 0.3;
     }
     if (dragging) {
       dragYaw = y0 + (e.clientX - dx0) * 0.004;
