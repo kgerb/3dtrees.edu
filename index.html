@@ -7,9 +7,9 @@
 <meta name="description" content="ForestVerse: Jeder Wald, nur ein Klick entfernt. Satellitendaten, KI und echte 3D-Laserscans machen die Wälder der Welt per Cardboard-Brille erfahrbar.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2032%2032%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%2214.2%22%20fill%3D%22none%22%20stroke%3D%22%232f6b47%22%20stroke-width%3D%221.6%22%20opacity%3D%22.45%22/%3E%3Cpath%20d%3D%22M3.5%2019.5c5%202.2%2020%202.2%2025%200%22%20fill%3D%22none%22%20stroke%3D%22%232f6b47%22%20stroke-width%3D%221.2%22%20opacity%3D%22.35%22/%3E%3Cg%20fill%3D%22%232f6b47%22%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%226.6%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2216.0%22%20cy%3D%229%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2214.85%22%20cy%3D%2211.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2217.15%22%20cy%3D%2211.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2213.7%22%20cy%3D%2214%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2216.0%22%20cy%3D%2214%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2218.3%22%20cy%3D%2214%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2212.55%22%20cy%3D%2216.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2214.85%22%20cy%3D%2216.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2217.15%22%20cy%3D%2216.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2219.45%22%20cy%3D%2216.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2211.4%22%20cy%3D%2219%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2213.7%22%20cy%3D%2219%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2216.0%22%20cy%3D%2219%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2218.3%22%20cy%3D%2219%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2220.6%22%20cy%3D%2219%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2210.25%22%20cy%3D%2221.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2212.55%22%20cy%3D%2221.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2214.85%22%20cy%3D%2221.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2217.15%22%20cy%3D%2221.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2219.45%22%20cy%3D%2221.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2221.75%22%20cy%3D%2221.5%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2224%22%20r%3D%221.05%22/%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2226.2%22%20r%3D%221.05%22/%3E%3C/g%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=20261126-29">
+<link rel="stylesheet" href="style.css?v=20261126-30">
 <link rel="preconnect" href="https://forest-data.ak-c-data-proxy.workers.dev" crossorigin>
-<script src="analytics.js?v=20261126-29"></script><!-- first, so even short visits are counted -->
+<script src="analytics.js?v=20261126-30"></script><!-- first, so even short visits are counted -->
 <script>
   // Pick the language before first paint: ?lang= > saved choice > browser language > German.
   (function () {
@@ -61,7 +61,8 @@
         </div>
         <div class="travel" role="group" aria-labelledby="travel-label">
           <span id="travel-label" class="sr-only"><span lang="de">Reise in den Wald:</span><span lang="en">Travel to a forest:</span></span>
-          <button type="button" data-biome="black-forest"><span class="site-name">Baiersbronn, </span><span lang="de">Deutschland</span><span lang="en">Germany</span></button>
+          <button type="button" data-biome="black-forest"><span class="site-name">Schwarzwald, </span><span lang="de">Deutschland</span><span lang="en">Germany</span></button>
+          <button type="button" data-biome="freiburg" data-palette="black-forest"><span class="site-name">Freiburg, </span><span lang="de">Deutschland</span><span lang="en">Germany</span></button>
           <button type="button" data-biome="boreal"><span class="site-name">Evo, </span><span lang="de">Finnland</span><span lang="en">Finland</span></button>
           <button type="button" data-biome="congo"><span class="site-name">Dja, </span><span lang="de">Kamerun</span><span lang="en">Cameroon</span></button>
           <button type="button" data-biome="gabon" data-palette="congo"><span class="site-name">Lopé, </span><span lang="de">Gabun</span><span lang="en">Gabon</span></button>
@@ -127,8 +128,8 @@
         </div>
 
         <h3><span lang="de">Wie es weitergeht</span><span lang="en">What happens next</span></h3>
-        <p lang="de">Jetzt ist die Jury am Zug, und wir sind ehrlich gesagt ziemlich gespannt. Bis wir mehr wissen, könnt ihr auf der <a href="#project">Startseite</a> schon durch sechs echte Wälder spazieren. Schaut gern immer mal wieder hier vorbei: Wir berichten, sobald es Neuigkeiten gibt.</p>
-        <p lang="en">Now it is the jury’s turn, and honestly, we are pretty excited. Until we know more, you can already walk through six real forests on the <a href="#project">home page</a>. Feel free to drop by now and then: we will post as soon as there is news.</p>
+        <p lang="de">Jetzt ist die Jury am Zug, und wir sind ehrlich gesagt ziemlich gespannt. Bis wir mehr wissen, könnt ihr auf der <a href="#project">Startseite</a> schon durch sieben echte Wälder spazieren. Schaut gern immer mal wieder hier vorbei: Wir berichten, sobald es Neuigkeiten gibt.</p>
+        <p lang="en">Now it is the jury’s turn, and honestly, we are pretty excited. Until we know more, you can already walk through seven real forests on the <a href="#project">home page</a>. Feel free to drop by now and then: we will post as soon as there is news.</p>
       </article>
     </div>
 
@@ -199,8 +200,8 @@
 
 <!-- Visitor counts: GoatCounter, no cookies, no personal data. Each tab is counted as its own page (see site.js). -->
 <script id="goatcounter" data-goatcounter="https://kgerb.goatcounter.com/count" data-goatcounter-settings='{"no_onload": true}' async src="https://gc.zgo.at/count.js"></script>
-<script src="site.js?v=20261126-29"></script>
-<script src="forest.js?v=20261126-29"></script>
-<script src="post-edit.js?v=20261126-29"></script>
+<script src="site.js?v=20261126-30"></script>
+<script src="forest.js?v=20261126-30"></script>
+<script src="post-edit.js?v=20261126-30"></script>
 </body>
 </html>
