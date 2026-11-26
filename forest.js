@@ -659,7 +659,7 @@
     var token = ++loadToken;
     loadReal(name).catch(function () { return generate(name); }).then(function (c) {
       if (token !== loadToken) return;
-      upload(c); settle = 2; // the first frames after a new scan include buffer uploads
+      upload(c); settle = 2; idleSince = performance.now(); // the first frames after a new scan include buffer uploads
       if (c.real && c.full > c.count) loadDetail(name, c).then(function (d) { if (token === loadToken) { uploadDetail(c, d); prefetchOthers(); } }, function () {});
       else prefetchOthers();
       camZ = 0; // every scan starts at its chosen viewpoint
@@ -700,6 +700,23 @@
       if (b.dataset.scrollHero !== undefined) hero.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
     });
   });
+
+  // ---------------------------------------------------------------- idle tour
+  // With nothing clicked, moved or typed for 10 s, show the next forest. ?auto=0 switches this off.
+  var AUTO = !/[?&]auto=0\b/.test(location.search) && !reduceMotion && !(navigator.connection && navigator.connection.saveData);
+  var idleSince = performance.now(), IDLE_MS = 10000;
+  function poke() { idleSince = performance.now(); }
+  ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart', 'scroll'].forEach(function (ev) {
+    window.addEventListener(ev, poke, { passive: true, capture: true });
+  });
+  if (AUTO) setInterval(function () {
+    if (!cloud || !cloud.real || stereo || dragging || !visible || document.hidden) { poke(); return; }
+    if (performance.now() - idleSince < IDLE_MS) return;
+    var keys = [];
+    document.querySelectorAll('button[data-biome]').forEach(function (b) { if (keys.indexOf(b.dataset.biome) < 0) keys.push(b.dataset.biome); });
+    if (keys.length > 1) setBiome(keys[(keys.indexOf(current) + 1) % keys.length]);
+    poke();
+  }, 500);
 
   // ---------------------------------------------------------------- look around
   var dragging = false, dx0 = 0, dy0 = 0, y0 = 0, p0 = 0;
