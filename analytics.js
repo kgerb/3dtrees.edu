@@ -8,7 +8,7 @@
   var POSTHOG_KEY = 'phc_vNw7fK9nL2QGmaUtnQbb7now5WxRKygGE6uag7FfgmuW'; // project API key (phc_...): public by design, safe in client code
   // Ad blockers block PostHog's own hosts. A proxy on a neutral address (tools/analytics-proxy) gets past
   // them: put its URL here, without a trailing slash. Empty = talk to PostHog directly.
-  var PROXY = '';
+  var PROXY = 'https://forest-data.ak-c-data-proxy.workers.dev';
   var POSTHOG_HOST = PROXY || 'https://eu.i.posthog.com';
   var queue = [];
   window.fvTrack = function (event, props) { if (queue) queue.push([event, props || {}]); else if (window.posthog) window.posthog.capture(event, props || {}); };
